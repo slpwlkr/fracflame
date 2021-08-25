@@ -1,14 +1,22 @@
 <template>
-  <img
-    alt="Vue logo"
-    src="./assets/logo.png"
-  >
-  <Counter :initial-value="0" />
+  <the-canvas
+    :is-running="isCanvasRunning"
+  />
+  <button @click="onToggleCanvasRunning">
+    Toggle Canvas
+  </button>
 </template>
 
 <script lang="ts" setup>
 
-import Counter from './components/Counter.vue'
+import { ref } from '@vue/reactivity'
+import TheCanvas from './components/TheCanvas.vue'
+
+const isCanvasRunning = ref(false)
+
+function onToggleCanvasRunning () {
+  isCanvasRunning.value = !isCanvasRunning.value
+}
 
 </script>
 
