@@ -3,16 +3,13 @@
     alt="Vue logo"
     src="./assets/logo.png"
   >
+  <Counter :initial-value="0" />
 </template>
 
-<script lang="ts">
-import { defineComponent } from 'vue'
+<script lang="ts" setup>
 
-export default defineComponent({
-  name: 'App',
-  components: {
-  }
-})
+import Counter from './components/Counter.vue'
+
 </script>
 
 <style>
