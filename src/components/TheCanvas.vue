@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 
 import { onMounted, ref, toRefs, watch } from 'vue'
+import { RandomInRange } from '@/helper'
 
 const props = defineProps({
   isRunning: {
@@ -29,8 +30,8 @@ onMounted(() => {
 
 function step () {
   if (canvasContext) {
-    const x = Math.random() * 512
-    const y = Math.random() * 512
+    const x = RandomInRange(true, 0, 512)
+    const y = RandomInRange(true, 0, 512)
     canvasContext.fillRect(x, y, 1, 1)
   }
   if (isRunning.value) {
