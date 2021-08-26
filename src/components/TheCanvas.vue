@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 
 import { onMounted, ref, toRefs, watch } from 'vue'
-import { RandomInRange } from '@/helper'
+import { randomInRange } from '@/utils/Helper'
 
 const props = defineProps({
   isRunning: {
@@ -23,15 +23,15 @@ watch(isRunning, (newValue) => {
 onMounted(() => {
   canvasContext = canvasRef.value?.getContext('2d')
   if (canvasContext) {
-    canvasContext.fillStyle = 'black'
+    canvasContext.fillStyle = 'white'
     window.requestAnimationFrame(step)
   }
 })
 
 function step () {
   if (canvasContext) {
-    const x = RandomInRange(true, 0, 512)
-    const y = RandomInRange(true, 0, 512)
+    const x = randomInRange(true, 0, 512)
+    const y = randomInRange(true, 0, 512)
     canvasContext.fillRect(x, y, 1, 1)
   }
   if (isRunning.value) {
@@ -54,6 +54,7 @@ function step () {
 
 <style scoped>
 #canvas {
-  border: 2px solid black;
+  border: 2px solid red;
+  background-color: black;
 }
 </style>

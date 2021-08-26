@@ -16,7 +16,10 @@ module.exports = {
   rules: {
     'no-console': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
     'no-debugger': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
-    "indent": ["error", 2, { "ignoredNodes": ["VariableDeclaration[declarations.length=0]"] }]
+    "indent": ["error", 2, { "ignoredNodes": ["VariableDeclaration[declarations.length=0]"] }], // const 缩进bug
+    // constructor bug
+    'no-useless-constructor': 'off',
+    '@typescript-eslint/no-useless-constructor': 'error',
   },
   globals: {
     defineProps: "readonly",
