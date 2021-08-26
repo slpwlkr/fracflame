@@ -1,4 +1,4 @@
-import { randomInRange, toPercentageString, normalizeArray } from './helper'
+import { randomInRange, toPercentageString, normalizeArray } from './Helper'
 
 class Color {
   r: number
@@ -55,10 +55,10 @@ export class Attractor {
 
   constructor (random = false, affineParams = [1, 0, 0, 0, 1, 0], weight = 1, color = new Color(false, 1, 1, 1)) {
     if (random) {
-      this.affineParams = new Array<number>(6)
-      this.affineParams.forEach((param) => {
-        param = randomInRange(false, -1, 1)
-      })
+      this.affineParams = []
+      for (let i = 0; i < 6; i++) {
+        this.affineParams.push(randomInRange(false, -1, 1))
+      }
       this.weight = Math.random()
       this.color = new Color(true)
     } else {
@@ -83,11 +83,10 @@ export class Attractor {
 
 export function generateRandomAttractors (minSize: number, maxSize: number):Attractor[] {
   const size = randomInRange(true, minSize, maxSize)
-
-  const attractors = new Array<Attractor>(size)
-  attractors.forEach((i) => {
-    i = new Attractor(true)
-  })
+  const attractors :Attractor[] = []
+  for (let i = 0; i < size; i++) {
+    attractors.push(new Attractor(true))
+  }
 
   // 归一权重, 默认权重和为1， 精确至小数点后4位
   const oldWeights = attractors.map(i => i.weight)
@@ -95,6 +94,6 @@ export function generateRandomAttractors (minSize: number, maxSize: number):Attr
   attractors.forEach((attractor, index) => {
     attractor.weight = newWeights[index]
   })
-
+  console.log(`weights:${oldWeights}->${newWeights}`)
   return attractors
 }

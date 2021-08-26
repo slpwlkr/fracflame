@@ -5,17 +5,26 @@
   <button @click="onToggleCanvasRunning">
     Toggle Canvas
   </button>
+  <button @click="onGenerateRandomAttractors">
+    Generate random Attractors
+  </button>
 </template>
 
 <script lang="ts" setup>
 
 import { ref } from '@vue/reactivity'
 import TheCanvas from './components/TheCanvas.vue'
+import { generateRandomAttractors } from './utils/FractalFlameAlgorithm'
 
 const isCanvasRunning = ref(false)
 
 function onToggleCanvasRunning () {
   isCanvasRunning.value = !isCanvasRunning.value
+}
+
+function onGenerateRandomAttractors () {
+  const attractors = generateRandomAttractors(1, 5)
+  console.log(attractors)
 }
 
 </script>

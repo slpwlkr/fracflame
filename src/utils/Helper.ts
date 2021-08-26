@@ -18,15 +18,15 @@ function normalizeArray (array: number[], scale: number, shouldRound: boolean, r
   newArray.forEach((i) => {
     sum += i
   })
-  newArray.forEach((i) => {
-    i *= scale / sum
+  newArray.forEach((e, i) => {
+    newArray[i] *= scale / sum
   })
 
   // round 表示四舍五入位数，正为小数点前位数，负为小数点后位数，0为个位四舍五入
   if (shouldRound) {
     const base = Math.pow(10, -round)
-    newArray.forEach((i) => {
-      i = Math.round(i * base) / base
+    newArray.forEach((e, i) => {
+      newArray[i] = Math.round(newArray[i] * base) / base
     })
 
     // 用最后一项消除误差
@@ -40,4 +40,19 @@ function normalizeArray (array: number[], scale: number, shouldRound: boolean, r
   return newArray
 }
 
-export { randomInRange, toPercentageString, normalizeArray }
+function randomWeightedPick (weights: number[]): number {
+  let sum = 0
+  weights.forEach((i) => {
+    sum += i
+  })
+
+  let randomValue = Math.random() * sum - weights[0]
+  let index = 0
+  while (randomValue > 0) {
+    index++
+    randomValue -= weights[index]
+  }
+  return index
+}
+
+export { randomInRange, toPercentageString, normalizeArray, randomWeightedPick }
