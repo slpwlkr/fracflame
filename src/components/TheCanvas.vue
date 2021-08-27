@@ -46,10 +46,13 @@ let imageData: ImageData
 const { isRunning, resetSignal } = toRefs(props)
 const currentPoint = new Point(true)
 let currentWeights = normalizeArray(props.attractors.map(val => val.weight), 1, true, -4)
+let currentAnimationFrameHandle: number
 
 watch(isRunning, (newValue) => {
   if (newValue) {
-    requestAnimationFrame(step)
+    currentAnimationFrameHandle = requestAnimationFrame(step)
+  } else {
+    window.cancelAnimationFrame(currentAnimationFrameHandle)
   }
 })
 
@@ -71,7 +74,7 @@ onMounted(() => {
 function step () {
   if (isRunning.value) {
     drawFlame()
-    requestAnimationFrame(step)
+    currentAnimationFrameHandle = window.requestAnimationFrame(step)
   }
 }
 
