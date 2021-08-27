@@ -2,9 +2,14 @@
   <the-canvas
     :is-running="isCanvasRunning"
     :attractors="currentAttractors"
+    :reset-signal="canvasResetSignal"
+    @reset-complete="onCanvasResetComplete"
   />
   <button @click="onToggleCanvasRunning">
     Toggle Canvas
+  </button>
+  <button @click="onRerollParameters">
+    Reroll Params
   </button>
 </template>
 
@@ -15,12 +20,24 @@ import TheCanvas from './components/TheCanvas.vue'
 import { generateRandomAttractors, Attractor } from './utils/FractalFlameAlgorithm'
 
 const isCanvasRunning = ref(false)
+const canvasResetSignal = ref(false)
 const currentAttractors = ref<Attractor[]>([])
 
 currentAttractors.value = generateRandomAttractors(3, 6)
 
 function onToggleCanvasRunning () {
   isCanvasRunning.value = !isCanvasRunning.value
+}
+
+function onRerollParameters () {
+  isCanvasRunning.value = false
+  currentAttractors.value = generateRandomAttractors(3, 6)
+  canvasResetSignal.value = true
+}
+
+function onCanvasResetComplete () {
+  canvasResetSignal.value = false
+  isCanvasRunning.value = true
 }
 
 </script>

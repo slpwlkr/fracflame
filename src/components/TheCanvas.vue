@@ -29,15 +29,23 @@ const props = defineProps({
   drawCallsPerFrame: {
     type: Number,
     default: 3000
+  },
+  resetSignal: {
+    type: Boolean,
+    default: false
   }
 })
+
+const emits = defineEmits([
+  'reset-complete'
+])
 
 const canvasRef = ref<HTMLCanvasElement>()
 let canvasContext: CanvasRenderingContext2D | null | undefined
 let imageData: ImageData
-const { isRunning } = toRefs(props)
+const { isRunning, resetSignal } = toRefs(props)
 const currentPoint = new Point(true)
-const currentWeights = normalizeArray(props.attractors.map(val => val.weight), 1, true, -4)
+let currentWeights = normalizeArray(props.attractors.map(val => val.weight), 1, true, -4)
 
 watch(isRunning, (newValue) => {
   if (newValue) {
@@ -45,12 +53,16 @@ watch(isRunning, (newValue) => {
   }
 })
 
+watch(resetSignal, (newValue) => {
+  if (newValue) {
+    reset()
+  }
+})
+
 onMounted(() => {
   if (canvasRef.value) {
     canvasContext = canvasRef.value?.getContext('2d')
     if (canvasContext) {
-      canvasContext.fillStyle = 'white'
-      window.requestAnimationFrame(step)
       imageData = canvasContext.getImageData(0, 0, canvasRef.value.width, canvasRef.value.height)
     }
   }
@@ -59,7 +71,7 @@ onMounted(() => {
 function step () {
   if (isRunning.value) {
     drawFlame()
-    window.requestAnimationFrame(step)
+    requestAnimationFrame(step)
   }
 }
 
@@ -94,6 +106,17 @@ function writeCurrentPoint ():boolean {
     return true
   } else {
     return false
+  }
+}
+
+function reset () {
+  if (canvasRef.value && canvasContext) {
+    const { width, height } = canvasRef.value
+    canvasContext.clearRect(0, 0, width, height)
+    imageData = canvasContext.getImageData(0, 0, width, height)
+    Object.assign(currentPoint, new Point(true))
+    currentWeights = [...normalizeArray(props.attractors.map(val => val.weight), 1, true, -4)]
+    emits('reset-complete')
   }
 }
 
