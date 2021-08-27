@@ -1,15 +1,15 @@
-import { randomInRange, toPercentageString, normalizeArray } from './Helper'
+import { randomInRange, normalizeArray } from './Helper'
 
-class Color {
+export class Color {
   r: number
   g: number
   b: number
 
   constructor (random = false, r = 0, g = 0, b = 0) {
     if (random) {
-      this.r = Math.random()
-      this.g = Math.random()
-      this.b = Math.random()
+      this.r = randomInRange(true, 0, 255)
+      this.g = randomInRange(true, 0, 255)
+      this.b = randomInRange(true, 0, 255)
     } else {
       this.r = r
       this.g = g
@@ -17,20 +17,14 @@ class Color {
     }
   }
 
-  get CSSString () {
-    return `rgb(${toPercentageString(this.r)},${toPercentageString(this.g)},${toPercentageString(this.b)})`
-  }
-
-  static mix (colorA: Color, colorB: Color): Color {
-    const color = new Color(false)
-    color.r = (colorA.r + colorB.r) / 2
-    color.g = (colorA.g + colorB.g) / 2
-    color.b = (colorA.b + colorB.b) / 2
-    return color
+  static mix (target: Color, source: Color):void {
+    target.r = Math.round((target.r + source.r) / 2)
+    target.g = Math.round((target.g + source.g) / 2)
+    target.b = Math.round((target.b + source.b) / 2)
   }
 }
 
-class Point {
+export class Point {
   x: number
   y: number
   color: Color
@@ -68,16 +62,14 @@ export class Attractor {
     }
   }
 
-  apply (point: Point): Point {
+  apply (point: Point):void {
     // 仿射变换
-    const affinePoint = new Point()
-    affinePoint.x = this.affineParams[0] * point.x + this.affineParams[1] * point.y + this.affineParams[2]
-    affinePoint.y = this.affineParams[3] * point.x + this.affineParams[4] * point.y + this.affineParams[5]
+    const { x, y } = point
+    point.x = this.affineParams[0] * x + this.affineParams[1] * y + this.affineParams[2]
+    point.y = this.affineParams[3] * x + this.affineParams[4] * y + this.affineParams[5]
 
     // 计算颜色
-    affinePoint.color = Color.mix(point.color, this.color)
-
-    return affinePoint
+    Color.mix(point.color, this.color)
   }
 }
 
@@ -94,6 +86,5 @@ export function generateRandomAttractors (minSize: number, maxSize: number):Attr
   attractors.forEach((attractor, index) => {
     attractor.weight = newWeights[index]
   })
-  console.log(`weights:${oldWeights}->${newWeights}`)
   return attractors
 }
