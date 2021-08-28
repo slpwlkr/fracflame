@@ -6,6 +6,7 @@
       height="512"
       width="512"
     />
+    <a ref="downloadLinkRef" />
   </div>
 </template>
 
@@ -37,23 +38,29 @@ const props = defineProps({
   renderSignal: {
     type: Boolean,
     default: false
+  },
+  downloadSignal: {
+    type: Boolean,
+    default: false
   }
 })
 
 const emits = defineEmits([
   'reset-complete',
-  'render-complete'
+  'render-complete',
+  'download-complete'
 ])
 
 const canvasRef = ref<HTMLCanvasElement>()
 let canvasContext: CanvasRenderingContext2D | null | undefined
 let imageData: ImageData
 let histogramData: Uint32Array
-const { isRunning, resetSignal, renderSignal } = toRefs(props)
+const { isRunning, resetSignal, renderSignal, downloadSignal } = toRefs(props)
 let currentAnimationFrameHandle: number
 const currentPoint = new Point(true)
 let currentWeights = normalizeArray(props.attractors.map(val => val.weight), 1, true, -4)
 const currentMaxFrequency = ref(0)
+const downloadLinkRef = ref<HTMLAnchorElement>()
 
 watch(isRunning, (newValue) => {
   if (newValue) {
@@ -77,13 +84,22 @@ watch(renderSignal, (newValue) => {
   }
 })
 
+watch(downloadSignal, (newValue) => {
+  if (newValue) {
+    downloadImage()
+    emits('download-complete')
+  }
+})
+
 onMounted(() => {
   if (canvasRef.value) {
     canvasContext = canvasRef.value?.getContext('2d')
     if (canvasContext) {
       const { width, height } = canvasRef.value
+      canvasContext.fillStyle = 'rgba(0,0,0,1)'
+      canvasContext.fillRect(0, 0, width, height) // 手动填充背景色
       imageData = canvasContext.getImageData(0, 0, width, height)
-      histogramData = new Uint32Array(imageData.data)
+      histogramData = new Uint32Array(width * height * 4)
     }
   }
 })
@@ -141,8 +157,9 @@ function reset () {
   if (canvasRef.value && canvasContext) {
     const { width, height } = canvasRef.value
     canvasContext.clearRect(0, 0, width, height)
+    canvasContext.fillRect(0, 0, width, height)
     imageData = canvasContext.getImageData(0, 0, width, height)
-    histogramData = new Uint32Array(imageData.data)
+    histogramData = new Uint32Array(width * height * 4)
     Object.assign(currentPoint, new Point(true))
     currentWeights = [...normalizeArray(props.attractors.map(val => val.weight), 1, true, -4)]
     currentMaxFrequency.value = 0
@@ -169,6 +186,15 @@ function renderHistogram () {
 
   if (canvasContext) {
     canvasContext.putImageData(imageData, 0, 0)
+  }
+}
+
+// 保存canvas图片到本地
+function downloadImage () {
+  if (canvasRef.value && downloadLinkRef.value) {
+    downloadLinkRef.value.setAttribute('download', `FracFlame_${Date.now()}.png`)
+    downloadLinkRef.value.setAttribute('href', canvasRef.value.toDataURL('image/png').replace('image/png', 'image/octet-stream'))
+    downloadLinkRef.value.click()
   }
 }
 

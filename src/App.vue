@@ -4,8 +4,10 @@
     :attractors="currentAttractors"
     :reset-signal="canvasResetSignal"
     :render-signal="canvasRenderSignal"
+    :download-signal="canvasDownloadSignal"
     @reset-complete="onCanvasResetComplete"
     @render-complete="onCanvasRenderComplete"
+    @download-complete="onCanvasDownloadComplete"
   />
   <button @click="onToggleCanvasRunning">
     Toggle Canvas
@@ -15,6 +17,9 @@
   </button>
   <button @click="onRenderCanvas">
     Render Canvas
+  </button>
+  <button @click="onDownloadCanvasImage">
+    Download Image
   </button>
 </template>
 
@@ -27,6 +32,7 @@ import { generateRandomChosenVariations, generateRandomAttractors, Attractor, Va
 const isCanvasRunning = ref(false)
 const canvasResetSignal = ref(false)
 const canvasRenderSignal = ref(false)
+const canvasDownloadSignal = ref(false)
 const currentAttractors = ref<Attractor[]>([])
 let currentChosenVariations = generateRandomChosenVariations(1, 6, VariationFunctions)
 
@@ -55,6 +61,15 @@ function onRenderCanvas () {
 
 function onCanvasRenderComplete () {
   canvasRenderSignal.value = false
+}
+
+function onDownloadCanvasImage () {
+  isCanvasRunning.value = false
+  canvasDownloadSignal.value = true
+}
+
+function onCanvasDownloadComplete () {
+  canvasDownloadSignal.value = false
 }
 
 </script>
