@@ -33,20 +33,27 @@ const props = defineProps({
   resetSignal: {
     type: Boolean,
     default: false
+  },
+  renderSignal: {
+    type: Boolean,
+    default: false
   }
 })
 
 const emits = defineEmits([
-  'reset-complete'
+  'reset-complete',
+  'render-complete'
 ])
 
 const canvasRef = ref<HTMLCanvasElement>()
 let canvasContext: CanvasRenderingContext2D | null | undefined
 let imageData: ImageData
-const { isRunning, resetSignal } = toRefs(props)
+let histogramData: Uint32Array
+const { isRunning, resetSignal, renderSignal } = toRefs(props)
+let currentAnimationFrameHandle: number
 const currentPoint = new Point(true)
 let currentWeights = normalizeArray(props.attractors.map(val => val.weight), 1, true, -4)
-let currentAnimationFrameHandle: number
+const currentMaxFrequency = ref(0)
 
 watch(isRunning, (newValue) => {
   if (newValue) {
@@ -59,6 +66,14 @@ watch(isRunning, (newValue) => {
 watch(resetSignal, (newValue) => {
   if (newValue) {
     reset()
+    emits('reset-complete')
+  }
+})
+
+watch(renderSignal, (newValue) => {
+  if (newValue) {
+    renderHistogram()
+    emits('render-complete')
   }
 })
 
@@ -66,7 +81,9 @@ onMounted(() => {
   if (canvasRef.value) {
     canvasContext = canvasRef.value?.getContext('2d')
     if (canvasContext) {
-      imageData = canvasContext.getImageData(0, 0, canvasRef.value.width, canvasRef.value.height)
+      const { width, height } = canvasRef.value
+      imageData = canvasContext.getImageData(0, 0, width, height)
+      histogramData = new Uint32Array(imageData.data)
     }
   }
 })
@@ -91,7 +108,7 @@ function drawFlame () {
   }
 }
 
-// 将currentPoint写到imageData上，在画布范围内返回true，否则false
+// 将currentPoint写到imageData以及histogramData上，在画布范围内返回true，否则false
 function writeCurrentPoint ():boolean {
   // 坐标转化到canvas标系
   const { x, y, color } = currentPoint
@@ -106,6 +123,14 @@ function writeCurrentPoint ():boolean {
     data[index + 1] = (color.g + data[index + 1]) / 2
     data[index + 2] = (color.b + data[index + 2]) / 2
     data[index + 3] = 255
+
+    histogramData[index] += color.r
+    histogramData[index + 1] += color.g
+    histogramData[index + 2] += color.b
+    const freq = ++histogramData[index + 3]
+    if (freq > currentMaxFrequency.value) {
+      currentMaxFrequency.value = freq // 更新最大采样频率
+    }
     return true
   } else {
     return false
@@ -117,9 +142,33 @@ function reset () {
     const { width, height } = canvasRef.value
     canvasContext.clearRect(0, 0, width, height)
     imageData = canvasContext.getImageData(0, 0, width, height)
+    histogramData = new Uint32Array(imageData.data)
     Object.assign(currentPoint, new Point(true))
     currentWeights = [...normalizeArray(props.attractors.map(val => val.weight), 1, true, -4)]
-    emits('reset-complete')
+    currentMaxFrequency.value = 0
+  }
+}
+
+// 将HistogramData渲染到canvas上（基于对数着色，gamma，更新imageData的值）
+function renderHistogram () {
+  const { width, height, data } = imageData
+  for (let row = 0; row < height; row++) {
+    for (let column = 0; column < width; column++) {
+      const index = row * width * 4 + column * 4
+      const freq = histogramData[index + 3]
+
+      if (freq > 0) {
+        const alpha = Math.log(freq) / Math.log(currentMaxFrequency.value)
+
+        for (let i = 0; i < 3; i++) {
+          data[index + i] = Math.round(alpha * histogramData[index + i] / freq)
+        }
+      }
+    }
+  }
+
+  if (canvasContext) {
+    canvasContext.putImageData(imageData, 0, 0)
   }
 }
 

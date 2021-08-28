@@ -4,7 +4,8 @@ module.exports = {
     node: true
   },
   parserOptions: {
-    ecmaVersion: 2020
+    ecmaVersion: 2020,
+    parser: '@typescript-eslint/parser'
   },
   extends: [
     'plugin:vue/vue3-recommended',

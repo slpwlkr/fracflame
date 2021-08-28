@@ -3,13 +3,18 @@
     :is-running="isCanvasRunning"
     :attractors="currentAttractors"
     :reset-signal="canvasResetSignal"
+    :render-signal="canvasRenderSignal"
     @reset-complete="onCanvasResetComplete"
+    @render-complete="onCanvasRenderComplete"
   />
   <button @click="onToggleCanvasRunning">
     Toggle Canvas
   </button>
   <button @click="onRerollParameters">
     Reroll Params
+  </button>
+  <button @click="onRenderCanvas">
+    Render Canvas
   </button>
 </template>
 
@@ -21,6 +26,7 @@ import { generateRandomChosenVariations, generateRandomAttractors, Attractor, Va
 
 const isCanvasRunning = ref(false)
 const canvasResetSignal = ref(false)
+const canvasRenderSignal = ref(false)
 const currentAttractors = ref<Attractor[]>([])
 let currentChosenVariations = generateRandomChosenVariations(1, 6, VariationFunctions)
 
@@ -40,6 +46,15 @@ function onRerollParameters () {
 function onCanvasResetComplete () {
   canvasResetSignal.value = false
   isCanvasRunning.value = true
+}
+
+function onRenderCanvas () {
+  isCanvasRunning.value = false
+  canvasRenderSignal.value = true
+}
+
+function onCanvasRenderComplete () {
+  canvasRenderSignal.value = false
 }
 
 </script>
