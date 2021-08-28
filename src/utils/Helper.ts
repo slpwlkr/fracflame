@@ -26,7 +26,7 @@ function normalizeArray (array: number[], scale: number, shouldRound: boolean, r
   if (shouldRound) {
     const base = Math.pow(10, -round)
     newArray.forEach((e, i) => {
-      newArray[i] = Math.round(newArray[i] * base) / base
+      newArray[i] = Math.round((newArray[i] + Number.EPSILON) * base) / base
     })
 
     // 用最后一项消除误差
@@ -55,4 +55,20 @@ function randomWeightedPick (weights: number[]): number {
   return index
 }
 
-export { randomInRange, toPercentageString, normalizeArray, randomWeightedPick }
+function randomPermutation (size: number):number[] {
+  // fisher-yates算法
+  const result:number[] = []
+  for (let i = 0; i < size; i++) {
+    result[i] = i
+  }
+  for (let i = size - 1; i > 0; i--) {
+    const j = randomInRange(true, 0, i, true, false)
+    const temp = result[j]
+    result[j] = result[i]
+    result[i] = temp
+  }
+
+  return result
+}
+
+export { randomInRange, toPercentageString, normalizeArray, randomWeightedPick, randomPermutation }

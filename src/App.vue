@@ -17,13 +17,14 @@
 
 import { ref } from '@vue/reactivity'
 import TheCanvas from './components/TheCanvas.vue'
-import { generateRandomAttractors, Attractor } from './utils/FractalFlameAlgorithm'
+import { generateRandomChosenVariations, generateRandomAttractors, Attractor, VariationFunctions } from './utils/FractalFlameAlgorithm'
 
 const isCanvasRunning = ref(false)
 const canvasResetSignal = ref(false)
 const currentAttractors = ref<Attractor[]>([])
+let currentChosenVariations = generateRandomChosenVariations(1, 6, VariationFunctions)
 
-currentAttractors.value = generateRandomAttractors(3, 6)
+currentAttractors.value = generateRandomAttractors(3, 6, currentChosenVariations, VariationFunctions)
 
 function onToggleCanvasRunning () {
   isCanvasRunning.value = !isCanvasRunning.value
@@ -31,7 +32,8 @@ function onToggleCanvasRunning () {
 
 function onRerollParameters () {
   isCanvasRunning.value = false
-  currentAttractors.value = generateRandomAttractors(3, 6)
+  currentChosenVariations = generateRandomChosenVariations(1, 6, VariationFunctions)
+  currentAttractors.value = generateRandomAttractors(3, 6, currentChosenVariations, VariationFunctions)
   canvasResetSignal.value = true
 }
 
