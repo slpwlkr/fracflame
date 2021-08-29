@@ -3,16 +3,22 @@
     <canvas
       id="canvas"
       ref="canvasRef"
-      height="512"
-      width="512"
+      height="600"
+      width="600"
     />
     <a ref="downloadLinkRef" />
+    <div id="render-stats">
+      <ul>
+        <li>points calculated: {{ currentPointsCalculated }}</li>
+        <li>points in canvas: {{ currentPointsInCanvas }} ({{ currentPointsInCanvasPercentage }}%)</li>
+      </ul>
+    </div>
   </div>
 </template>
 
 <script lang="ts" setup>
 
-import { onMounted, PropType, ref, toRefs, watch } from 'vue'
+import { computed, onMounted, PropType, ref, toRefs, watch } from 'vue'
 import { normalizeArray, randomWeightedPick } from '@/utils/Helper'
 import { Point, Attractor } from '@/utils/FractalFlameAlgorithm'
 
@@ -52,15 +58,24 @@ const emits = defineEmits([
 ])
 
 const canvasRef = ref<HTMLCanvasElement>()
+const downloadLinkRef = ref<HTMLAnchorElement>()
 let canvasContext: CanvasRenderingContext2D | null | undefined
+
 let imageData: ImageData
 let histogramData: Uint32Array
+
 const { isRunning, resetSignal, renderSignal, downloadSignal } = toRefs(props)
 let currentAnimationFrameHandle: number
 const currentPoint = new Point(true)
 let currentWeights = normalizeArray(props.attractors.map(val => val.weight), 1, true, -4)
+
 const currentMaxFrequency = ref(0)
-const downloadLinkRef = ref<HTMLAnchorElement>()
+const currentPointsCalculated = ref(0)
+const currentPointsInCanvas = ref(0)
+
+const currentPointsInCanvasPercentage = computed(() => {
+  return Math.round(currentPointsInCanvas.value / currentPointsCalculated.value * 10000) / 100
+})
 
 watch(isRunning, (newValue) => {
   if (newValue) {
@@ -124,8 +139,8 @@ function drawFlame () {
   }
 }
 
-// 将currentPoint写到imageData以及histogramData上，在画布范围内返回true，否则false
-function writeCurrentPoint ():boolean {
+// 将currentPoint写到imageData以及histogramData上
+function writeCurrentPoint () {
   // 坐标转化到canvas标系
   const { x, y, color } = currentPoint
   const { width, height, data } = imageData
@@ -147,10 +162,10 @@ function writeCurrentPoint ():boolean {
     if (freq > currentMaxFrequency.value) {
       currentMaxFrequency.value = freq // 更新最大采样频率
     }
-    return true
-  } else {
-    return false
+
+    currentPointsInCanvas.value++
   }
+  currentPointsCalculated.value++
 }
 
 function reset () {
@@ -163,6 +178,8 @@ function reset () {
     Object.assign(currentPoint, new Point(true))
     currentWeights = [...normalizeArray(props.attractors.map(val => val.weight), 1, true, -4)]
     currentMaxFrequency.value = 0
+    currentPointsCalculated.value = 0
+    currentPointsInCanvas.value = 0
   }
 }
 
