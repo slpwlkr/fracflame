@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import Flame from '@/views/Flame.vue'
+import FlameEditor from '@/views/FlameEditor.vue'
 
 const routerHistory = createWebHistory()
 
@@ -9,7 +9,7 @@ const router = createRouter({
     {
       path: '/',
       name: 'home',
-      component: Flame
+      component: FlameEditor
     }
   ]
 })
