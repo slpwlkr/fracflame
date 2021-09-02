@@ -4,13 +4,69 @@
     has-sider
   >
     <n-layout-sider
+      id="sider"
       bordered
       content-style="padding: 24px"
+      width="360px"
+      :native-scrollbar="false"
     >
-      <n-icon>
-        <fire />
-      </n-icon>
-      <span>分形焰火</span>
+      <sider-title />
+      <n-divider />
+      <n-thing>
+        <template #header>
+          {{ title }}
+        </template>
+        <n-ul>
+          <n-li>
+            创建于 {{ toCNDatetimeString(createdAt) }}
+          </n-li>
+          <n-li>
+            上传更新于 {{ toCNDatetimeString(lastUpdatedAt) }}
+          </n-li>
+          <n-li>
+            画布长: {{ canvasWidth }}px, 高: {{ canvasHeight }}px
+          </n-li>
+        </n-ul>
+        <template #action>
+          <n-space justify="space-around">
+            <n-button
+              :focusable="false"
+              @click="onDownloadImage"
+            >
+              保存并上传
+            </n-button>
+            <n-button
+              :focusable="false"
+              @click="onDownloadImage"
+            >
+              下载图像
+            </n-button>
+          </n-space>
+        </template>
+      </n-thing>
+      <n-divider />
+      <n-collapse>
+        <n-collapse-item title="画布设置">
+          <span>画布长度</span>
+          <n-input-number
+            v-model:value="inputCanvasWidth"
+            :max="canvasWidthMax"
+            :min="canvasWidthMin"
+          />
+          <span>画布高度</span>
+          <n-input-number
+            v-model:value="inputCanvasHeight"
+            :max="canvasHeightMax"
+            :min="canvasHeightMin"
+          />
+          <n-button
+            :focusable="false"
+            @click="onApplyCanvasSettings"
+          >
+            应用设置
+          </n-button>
+        </n-collapse-item>
+      </n-collapse>
       <n-divider />
       <n-space vertical>
         <n-button
@@ -45,36 +101,48 @@
         >
           下载图像
         </n-button>
+        <div id="render-stats">
+          <ul>
+            <li>points calculated: {{ pointsCalculated }}</li>
+            <li>points in canvas: {{ pointsRendered }}, {{ pointsRenderPercentage }}%</li>
+          </ul>
+        </div>
       </n-space>
     </n-layout-sider>
-    <n-layout-content content-style="padding: 24px">
+    <n-layout-content
+      id="canvas-container"
+      content-style="padding: 24px"
+    >
       <canvas
         id="flame-canvas"
         ref="canvasRef"
         :width="canvasWidth"
         :height="canvasHeight"
       />
-      <a ref="downloadLinkRef" />
-      <div id="render-stats">
-        <ul>
-          <li>points calculated: {{ pointsCalculated }}</li>
-          <li>points in canvas: {{ pointsRendered }}</li>
-        </ul>
-      </div>
+      <a
+        ref="downloadLinkRef"
+        hidden
+      />
     </n-layout-content>
   </n-layout>
 </template>
 
 <script lang="ts" setup>
 
-import { NLayout, NLayoutContent, NLayoutSider, NIcon, NDivider, NSpace, NButton } from 'naive-ui'
+import {
+  NLayout, NLayoutContent, NLayoutSider,
+  NIcon, NDivider, NSpace, NButton,
+  NThing, NUl, NLi, NCollapse, NCollapseItem,
+  NInputNumber
+} from 'naive-ui'
 import { Fire } from '@vicons/fa'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useStore } from 'vuex'
 import { cloneDeep } from 'lodash'
 import { key } from '@/store'
 import { Attractor, Point, generateRandomChosenVariations, generateRandomAttractors, VariationFunctions } from '@/utils/FractalFlameAlgorithm'
-import { normalizeArray, randomWeightedPick } from '@/utils/Helper'
+import { normalizeArray, randomWeightedPick, toCNDatetimeString } from '@/utils/Helper'
+import SiderTitle from '@/components/SiderTitle.vue'
 
 const store = useStore(key)
 const flameInEditor = computed(() => store.state.flameInEditor)
@@ -82,12 +150,22 @@ const flameInEditor = computed(() => store.state.flameInEditor)
 const canvasRef = ref<HTMLCanvasElement>()
 const downloadLinkRef = ref<HTMLAnchorElement>()
 let canvasContext: CanvasRenderingContext2D | null | undefined
-// 作品参数
+// 作品信息
 const title = ref('')
+const createdAt = ref(0)
+const lastUpdatedAt = ref(0)
+// 画布设置
 const canvasWidth = ref(512)
 const canvasHeight = ref(512)
+const canvasWidthRatio = computed(() => {
+  return canvasWidth.value > canvasHeight.value ? canvasWidth.value / canvasHeight.value : 1
+})
+const canvasHeightRatio = computed(() => {
+  return canvasHeight.value > canvasWidth.value ? canvasHeight.value / canvasWidth.value : 1
+})
+// 吸引子设置
 const attractors = ref<Attractor[]>([])
-let currentWeights: number[] // 缓存吸引子权重
+let currentWeights: number[] // 缓存吸引子权重，由于吸引子结构复杂，故手动更新
 // 渲染统计
 const maxFrequency = ref(0)
 const pointsCalculated = ref(0)
@@ -102,6 +180,17 @@ const isRunning = ref(false)
 let currentAnimationFrameHandle: number
 // 随机化设置
 let chosenVariations : number[]
+// 输入信息（性能原因，需要点击按钮应用更改才能改动真实的参数，因此管理多一份参数对应表单）
+const inputCanvasWidth = ref(512)
+const inputCanvasHeight = ref(512)
+const canvasWidthMax = 1920
+const canvasWidthMin = 320
+const canvasHeightMax = 1080
+const canvasHeightMin = 320
+
+const pointsRenderPercentage = computed(() => {
+  return (Math.round(pointsRendered.value / pointsCalculated.value * 10000) / 100).toString()
+})
 // 监听isRunning，控制计算过程
 watch(isRunning, (newValue) => {
   if (newValue) {
@@ -115,6 +204,8 @@ onMounted(() => {
   // 将store中的数据克隆到本地
   if (flameInEditor.value) {
     title.value = flameInEditor.value.title
+    createdAt.value = flameInEditor.value.createdAt
+    lastUpdatedAt.value = flameInEditor.value.lastUpdatedAt
     canvasWidth.value = flameInEditor.value.canvasWidth
     canvasHeight.value = flameInEditor.value.canvasHeight
     attractors.value = cloneDeep(flameInEditor.value.attractors)
@@ -127,6 +218,9 @@ onMounted(() => {
     drawPoint = Object.create(flameInEditor.value.drawPoint)
     // 计算权重缓存
     currentWeights = normalizeArray(attractors.value.map(val => val.weight), 1, true, -4)
+    // 赋值给表单用的变量
+    inputCanvasWidth.value = canvasWidth.value
+    inputCanvasHeight.value = canvasHeight.value
   }
 
   if (canvasRef.value) {
@@ -145,68 +239,6 @@ function onRerollParameters () {
   attractors.value = generateRandomAttractors(3, 5, chosenVariations, VariationFunctions)
   currentWeights = normalizeArray(attractors.value.map(val => val.weight), 1, true, -4)
   isRunning.value = true
-}
-
-function step () {
-  if (isRunning.value) {
-    drawFlame()
-    currentAnimationFrameHandle = window.requestAnimationFrame(step)
-  }
-}
-
-// 每帧调用一次，计算drawCallsPerFrame次，将imageData绘制在canvas上
-function drawFlame () {
-  for (let i = 0; i < drawCallsPerFrame; i++) {
-    const index = randomWeightedPick(currentWeights) // 随机选择一个attractor
-    attractors.value[index].apply(drawPoint)
-    writeCurrentPoint()
-  }
-  if (canvasContext) {
-    canvasContext.putImageData(imageData, 0, 0)
-  }
-}
-
-// 将currentPoint写到imageData以及histogramData上
-function writeCurrentPoint () {
-  // 坐标转化到canvas标系
-  const { x, y, color } = drawPoint
-  const { width, height, data } = imageData
-  const dx = Math.round((x + 1) * width / 2)
-  const dy = Math.round((y + 1) * height / 2)
-
-  // 检测坐标是否在画布范围内
-  if (dx < width && dx >= 0 && dy < height && dy >= 0) {
-    const index = dy * width * 4 + dx * 4
-    data[index] = (color.r + data[index]) / 2
-    data[index + 1] = (color.g + data[index + 1]) / 2
-    data[index + 2] = (color.b + data[index + 2]) / 2
-    data[index + 3] = 255
-
-    histogramData[index] += color.r
-    histogramData[index + 1] += color.g
-    histogramData[index + 2] += color.b
-    const freq = ++histogramData[index + 3]
-    if (freq > maxFrequency.value) {
-      maxFrequency.value = freq // 更新最大采样频率
-    }
-
-    pointsRendered.value++
-  }
-  pointsCalculated.value++
-}
-
-function reset () {
-  if (canvasRef.value && canvasContext) {
-    const { width, height } = canvasRef.value
-    canvasContext.clearRect(0, 0, width, height)
-    canvasContext.fillRect(0, 0, width, height)
-    imageData = canvasContext.getImageData(0, 0, width, height)
-    histogramData = new Uint32Array(width * height * 4)
-    drawPoint = new Point(true)
-    maxFrequency.value = 0
-    pointsCalculated.value = 0
-    pointsRendered.value = 0
-  }
 }
 
 // 将HistogramData渲染到canvas上（基于对数着色，gamma，更新imageData的值）
@@ -243,11 +275,103 @@ function onDownloadImage () {
   }
 }
 
+async function onApplyCanvasSettings () {
+  isRunning.value = false
+  inputCanvasWidth.value = Math.round(inputCanvasWidth.value)
+  inputCanvasHeight.value = Math.round(inputCanvasHeight.value)
+  canvasWidth.value = inputCanvasWidth.value
+  canvasHeight.value = inputCanvasHeight.value
+  await nextTick() // 应用对canvas的修改
+  reset()
+  isRunning.value = true
+}
+
+function step () {
+  if (isRunning.value) {
+    drawFlame()
+    currentAnimationFrameHandle = window.requestAnimationFrame(step)
+  }
+}
+
+// 每帧调用一次，计算drawCallsPerFrame次，将imageData绘制在canvas上
+function drawFlame () {
+  let pointsRenderedInFrame = 0
+  for (let i = 0; i < drawCallsPerFrame; i++) {
+    const index = randomWeightedPick(currentWeights) // 随机选择一个attractor
+    attractors.value[index].apply(drawPoint)
+    if (writeCurrentPoint()) {
+      pointsRenderedInFrame++
+    }
+  }
+  if (canvasContext) {
+    canvasContext.putImageData(imageData, 0, 0)
+  }
+  pointsRendered.value += pointsRenderedInFrame
+  pointsCalculated.value += drawCallsPerFrame
+}
+
+// 将currentPoint写到imageData以及histogramData上
+function writeCurrentPoint () {
+  // 坐标转化到canvas标系
+  const { x, y, color } = drawPoint
+  const { width, height, data } = imageData
+  const dx = Math.round((x * 1 / canvasWidthRatio.value + 1) * width / 2)
+  const dy = Math.round((y * 1 / canvasHeightRatio.value + 1) * height / 2)
+
+  // 检测坐标是否在画布范围内
+  if (dx < width && dx >= 0 && dy < height && dy >= 0) {
+    const index = dy * width * 4 + dx * 4
+    data[index] = (color.r + data[index]) / 2
+    data[index + 1] = (color.g + data[index + 1]) / 2
+    data[index + 2] = (color.b + data[index + 2]) / 2
+    data[index + 3] = 255
+
+    histogramData[index] += color.r
+    histogramData[index + 1] += color.g
+    histogramData[index + 2] += color.b
+    const freq = ++histogramData[index + 3]
+    if (freq > maxFrequency.value) {
+      maxFrequency.value = freq // 更新最大采样频率
+    }
+
+    return true
+  }
+  return false
+}
+
+function reset () {
+  if (canvasRef.value && canvasContext) {
+    const { width, height } = canvasRef.value
+    canvasContext.clearRect(0, 0, width, height)
+    canvasContext.fillRect(0, 0, width, height)
+    imageData = canvasContext.getImageData(0, 0, width, height)
+    histogramData = new Uint32Array(width * height * 4)
+    drawPoint = new Point(true)
+    maxFrequency.value = 0
+    pointsCalculated.value = 0
+    pointsRendered.value = 0
+  }
+}
+
 </script>
 
 <style scoped>
 #flame-canvas {
   border: 1px dashed white;
+  background-color: black;
+  position: absolute;
+  margin: 0;
+  top: 50%;
+  left: 50%;
+  margin-right: -50%;
+  transform: translate(-50%, -50%)
+}
+#canvas-container {
+  background-color: black;
+  overflow: auto;
+  position: relative;
+}
+#sider {
   background-color: black;
 }
 </style>

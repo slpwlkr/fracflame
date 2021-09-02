@@ -71,4 +71,8 @@ function randomPermutation (size: number):number[] {
   return result
 }
 
-export { randomInRange, toPercentageString, normalizeArray, randomWeightedPick, randomPermutation }
+function toCNDatetimeString (time: number): string {
+  return new Date(time).toLocaleString('zh-CN', { hour12: false })
+}
+
+export { randomInRange, toPercentageString, normalizeArray, randomWeightedPick, randomPermutation, toCNDatetimeString }

@@ -7,8 +7,8 @@ export interface IFlameInEditor {
   artworkID: string
   userID: string
   title: string
-  createdAt: string
-  lastUpdatedAt: string
+  createdAt: number
+  lastUpdatedAt: number
   attractors: Attractor[]
   canvasWidth: number
   canvasHeight: number
