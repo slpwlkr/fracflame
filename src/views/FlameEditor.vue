@@ -16,17 +16,23 @@
         <template #header>
           {{ title }}
         </template>
-        <n-ul>
-          <n-li>
-            创建于 {{ toCNDatetimeString(createdAt) }}
-          </n-li>
-          <n-li>
-            上传更新于 {{ toCNDatetimeString(lastUpdatedAt) }}
-          </n-li>
-          <n-li>
-            画布长: {{ canvasWidth }}px, 高: {{ canvasHeight }}px
-          </n-li>
-        </n-ul>
+        <n-descriptions
+          :column="1"
+          bordered
+          label-placement="left"
+          label-align="right"
+          size="small"
+        >
+          <n-descriptions-item label="创建于">
+            {{ toCNDatetimeString(createdAt) }}
+          </n-descriptions-item>
+          <n-descriptions-item label="上次更新于">
+            {{ toCNDatetimeString(lastUpdatedAt) }}
+          </n-descriptions-item>
+          <n-descriptions-item label="画布大小">
+            {{ canvasWidth }} * {{ canvasHeight }} px
+          </n-descriptions-item>
+        </n-descriptions>
         <template #action>
           <n-space justify="space-around">
             <n-button
@@ -46,9 +52,46 @@
       </n-thing>
       <n-divider />
       <n-collapse>
+        <n-collapse-item title="计算控制">
+          <n-space vertical>
+            <n-descriptions
+              :column="1"
+              bordered
+              label-placement="left"
+              label-align="right"
+              size="small"
+            >
+              <n-descriptions-item label="已计算点">
+                {{ pointsCalculated.toExponential(3) }} 个
+              </n-descriptions-item>
+              <n-descriptions-item label="已绘制点">
+                {{ pointsRendered.toExponential(3) }} 个
+              </n-descriptions-item>
+              <n-descriptions-item label="绘制率">
+                {{ pointsRenderPercentage }} %
+              </n-descriptions-item>
+              <n-descriptions-item label="运行帧率">
+                {{ isRunning ? frameRate.toFixed(0) : '-' }} 帧/每秒
+              </n-descriptions-item>
+              <n-descriptions-item label="每帧计算">
+                {{ isRunning ? drawCallsPerFrame : '-' }} 次
+              </n-descriptions-item>
+            </n-descriptions>
+            <n-button
+              :focusable="false"
+              @click="onToggleCanvasRunning"
+            >
+              {{ isRunning ? '暂停计算' : '开始计算' }}
+            </n-button>
+          </n-space>
+        </n-collapse-item>
+      </n-collapse>
+      <n-divider />
+      <n-collapse>
         <n-collapse-item title="画布设置">
           <n-form
             label-placement="left"
+            label-align="right"
           >
             <n-form-item
               label="画布大小"
@@ -68,27 +111,17 @@
                 v-model:checked="inputShouldInvertCanvasResolution"
               />
             </n-form-item>
-            <n-form-item>
-              <n-button
-                :focusable="false"
-                @click="onApplyCanvasSettings"
-              >
-                应用设置
-              </n-button>
-            </n-form-item>
           </n-form>
+          <n-button
+            :focusable="false"
+            @click="onApplyCanvasSettings"
+          >
+            应用设置
+          </n-button>
         </n-collapse-item>
       </n-collapse>
       <n-divider />
       <n-space vertical>
-        <n-button
-          color="#FFFFFF"
-          text-color="#000000"
-          bordered
-          @click="onToggleCanvasRunning"
-        >
-          {{ isRunning ? '暂停计算' : '开始计算' }}
-        </n-button>
         <n-button
           color="#FFFFFF"
           text-color="#000000"
@@ -113,12 +146,6 @@
         >
           下载图像
         </n-button>
-        <div id="render-stats">
-          <ul>
-            <li>points calculated: {{ pointsCalculated }}</li>
-            <li>points in canvas: {{ pointsRendered }}, {{ pointsRenderPercentage }}%</li>
-          </ul>
-        </div>
       </n-space>
     </n-layout-sider>
     <n-layout-content
@@ -145,7 +172,8 @@ import {
   NLayout, NLayoutContent, NLayoutSider,
   NIcon, NDivider, NSpace, NButton,
   NThing, NUl, NLi, NCollapse, NCollapseItem,
-  NForm, NFormItem, NCascader, NCheckbox
+  NForm, NFormItem, NCascader, NCheckbox,
+  NDescriptions, NDescriptionsItem
 } from 'naive-ui'
 import { Fire } from '@vicons/fa'
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
@@ -179,16 +207,18 @@ const canvasHeightRatio = computed(() => {
 // 吸引子设置
 const attractors = ref<Attractor[]>([])
 let currentWeights: number[] // 缓存吸引子权重，由于吸引子结构复杂，故手动更新
-// 渲染统计
+// 计算统计
 const maxFrequency = ref(0)
 const pointsCalculated = ref(0)
 const pointsRendered = ref(0)
+const frameRate = ref(60)
+let lastFrameTimeStamp: number
 // 内部数据存储
 let imageData : ImageData
 let histogramData : Uint32Array
 let drawPoint : Point
-// 渲染器参数
-const drawCallsPerFrame = 1000
+// 渲染器状态
+const drawCallsPerFrame = ref(1000)
 const isRunning = ref(false)
 let currentAnimationFrameHandle: number
 // 随机化设置
@@ -196,13 +226,18 @@ let chosenVariations : number[]
 // 表单输入信息（性能原因，需要点击按钮应用更改才能改动真实的参数，因此管理多一份参数对应表单）
 const inputCanvasResolution = ref('')
 const inputShouldInvertCanvasResolution = ref(false)
+// 动态调整帧率参数
+const dynamicDrawCallsFrameRateThresholdHigh = 60
+const dynamicDrawCallsFrameRateThresholdLow = 50
+const dynamicDrawCallsAdjustRate = 0.05
 
 const pointsRenderPercentage = computed(() => {
-  return (Math.round(pointsRendered.value / pointsCalculated.value * 10000) / 100).toString()
+  return (pointsRendered.value / pointsCalculated.value * 100).toFixed(2)
 })
 // 监听isRunning，控制计算过程
 watch(isRunning, (newValue) => {
   if (newValue) {
+    lastFrameTimeStamp = performance.now() // 初始化帧率计算
     currentAnimationFrameHandle = requestAnimationFrame(step)
   } else {
     window.cancelAnimationFrame(currentAnimationFrameHandle)
@@ -306,14 +341,23 @@ async function onApplyCanvasSettings () {
 function step () {
   if (isRunning.value) {
     drawFlame()
+    // 计算帧率
+    frameRate.value = 1000 / (performance.now() - lastFrameTimeStamp)
+    lastFrameTimeStamp = performance.now()
     currentAnimationFrameHandle = window.requestAnimationFrame(step)
+    // 动态调整帧率
+    if (frameRate.value > dynamicDrawCallsFrameRateThresholdHigh) {
+      drawCallsPerFrame.value = Math.round(drawCallsPerFrame.value * (1 + dynamicDrawCallsAdjustRate))
+    } else if (frameRate.value < dynamicDrawCallsFrameRateThresholdLow) {
+      drawCallsPerFrame.value = Math.round(drawCallsPerFrame.value * (1 - dynamicDrawCallsAdjustRate))
+    }
   }
 }
 
 // 每帧调用一次，计算drawCallsPerFrame次，将imageData绘制在canvas上
 function drawFlame () {
   let pointsRenderedInFrame = 0
-  for (let i = 0; i < drawCallsPerFrame; i++) {
+  for (let i = 0; i < drawCallsPerFrame.value; i++) {
     const index = randomWeightedPick(currentWeights) // 随机选择一个attractor
     attractors.value[index].apply(drawPoint)
     if (writeCurrentPoint()) {
@@ -324,7 +368,7 @@ function drawFlame () {
     canvasContext.putImageData(imageData, 0, 0)
   }
   pointsRendered.value += pointsRenderedInFrame
-  pointsCalculated.value += drawCallsPerFrame
+  pointsCalculated.value += drawCallsPerFrame.value
 }
 
 // 将currentPoint写到imageData以及histogramData上
@@ -367,6 +411,7 @@ function reset () {
     maxFrequency.value = 0
     pointsCalculated.value = 0
     pointsRendered.value = 0
+    drawCallsPerFrame.value = 1000
   }
 }
 
