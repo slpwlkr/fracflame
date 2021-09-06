@@ -12,6 +12,7 @@ export interface IFlameInEditor {
   attractors: Attractor[]
   canvasWidth: number
   canvasHeight: number
+  gamma: number
   imageData: ImageData
   histogramData: Uint32Array
   drawPoint: Point

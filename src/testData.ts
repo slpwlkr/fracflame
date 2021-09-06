@@ -45,6 +45,7 @@ export const testFlameInEditor: IFlameInEditor = {
   attractors: testAttractors1,
   canvasWidth: 800,
   canvasHeight: 600,
+  gamma: 2.2,
   imageData: getTestImageData(800, 600),
   histogramData: new Uint32Array(800 * 600 * 4),
   drawPoint: new Point(true),

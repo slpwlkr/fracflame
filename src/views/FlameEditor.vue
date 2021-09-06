@@ -16,23 +16,6 @@
         <template #header>
           {{ title }}
         </template>
-        <n-descriptions
-          :column="1"
-          bordered
-          label-placement="left"
-          label-align="right"
-          size="small"
-        >
-          <n-descriptions-item label="创建于">
-            {{ toCNDatetimeString(createdAt) }}
-          </n-descriptions-item>
-          <n-descriptions-item label="上次更新于">
-            {{ toCNDatetimeString(lastUpdatedAt) }}
-          </n-descriptions-item>
-          <n-descriptions-item label="画布大小">
-            {{ canvasWidth }} * {{ canvasHeight }} px
-          </n-descriptions-item>
-        </n-descriptions>
         <template #action>
           <n-space justify="space-around">
             <n-button
@@ -52,6 +35,25 @@
       </n-thing>
       <n-divider />
       <n-collapse>
+        <n-collapse-item title="基础信息">
+          <n-descriptions
+            :column="1"
+            bordered
+            label-placement="left"
+            label-align="right"
+            size="small"
+          >
+            <n-descriptions-item label="创建于">
+              {{ toCNDatetimeString(createdAt) }}
+            </n-descriptions-item>
+            <n-descriptions-item label="上次更新于">
+              {{ toCNDatetimeString(lastUpdatedAt) }}
+            </n-descriptions-item>
+            <n-descriptions-item label="画布大小">
+              {{ canvasWidth }} * {{ canvasHeight }} px
+            </n-descriptions-item>
+          </n-descriptions>
+        </n-collapse-item>
         <n-collapse-item title="计算控制">
           <n-space vertical>
             <n-descriptions
@@ -70,6 +72,9 @@
               <n-descriptions-item label="绘制率">
                 {{ pointsRenderPercentage }} %
               </n-descriptions-item>
+              <n-descriptions-item label="最大采样频次">
+                {{ maxFrequency }} 次
+              </n-descriptions-item>
               <n-descriptions-item label="运行帧率">
                 {{ isRunning ? frameRate.toFixed(0) : '-' }} 帧/每秒
               </n-descriptions-item>
@@ -85,9 +90,25 @@
             </n-button>
           </n-space>
         </n-collapse-item>
-      </n-collapse>
-      <n-divider />
-      <n-collapse>
+        <n-collapse-item title="渲染控制">
+          <n-form>
+            <n-form-item label="伽马校正值">
+              <n-slider
+                v-model:value="gamma"
+                :max="4"
+                :min="0.1"
+                :step="0.1"
+                :marks="{ 1:'1.0', 2.2:'2.2' }"
+              />
+            </n-form-item>
+          </n-form>
+          <n-button
+            :focusable="false"
+            @click="onRenderCanvas"
+          >
+            渲染图像
+          </n-button>
+        </n-collapse-item>
         <n-collapse-item title="画布设置">
           <n-form
             label-placement="left"
@@ -130,22 +151,6 @@
         >
           随机生成参数
         </n-button>
-        <n-button
-          color="#FFFFFF"
-          text-color="#000000"
-          bordered
-          @click="onRenderCanvas"
-        >
-          渲染图像
-        </n-button>
-        <n-button
-          color="#FFFFFF"
-          text-color="#000000"
-          bordered
-          @click="onDownloadImage"
-        >
-          下载图像
-        </n-button>
       </n-space>
     </n-layout-sider>
     <n-layout-content
@@ -169,13 +174,10 @@
 <script lang="ts" setup>
 
 import {
-  NLayout, NLayoutContent, NLayoutSider,
-  NIcon, NDivider, NSpace, NButton,
-  NThing, NUl, NLi, NCollapse, NCollapseItem,
-  NForm, NFormItem, NCascader, NCheckbox,
-  NDescriptions, NDescriptionsItem
+  NLayout, NLayoutContent, NLayoutSider, NSpace,
+  NCollapse, NCollapseItem, NThing, NDescriptions, NDescriptionsItem, NForm, NFormItem,
+  NCascader, NCheckbox, NDivider, NButton, NSlider
 } from 'naive-ui'
-import { Fire } from '@vicons/fa'
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useStore } from 'vuex'
 import { cloneDeep } from 'lodash'
@@ -213,6 +215,8 @@ const pointsCalculated = ref(0)
 const pointsRendered = ref(0)
 const frameRate = ref(60)
 let lastFrameTimeStamp: number
+// 渲染参数
+const gamma = ref(1)
 // 内部数据存储
 let imageData : ImageData
 let histogramData : Uint32Array
@@ -252,6 +256,7 @@ onMounted(() => {
     lastUpdatedAt.value = flameInEditor.value.lastUpdatedAt
     canvasWidth.value = flameInEditor.value.canvasWidth
     canvasHeight.value = flameInEditor.value.canvasHeight
+    gamma.value = flameInEditor.value.gamma
     attractors.value = cloneDeep(flameInEditor.value.attractors)
     maxFrequency.value = flameInEditor.value.maxFrequency
     pointsCalculated.value = flameInEditor.value.pointsCalculated
@@ -299,7 +304,7 @@ function onRenderCanvas () {
       const freq = histogramData[index + 3]
 
       if (freq > 0) {
-        const alpha = Math.log(freq) / Math.log(maxFrequency.value)
+        const alpha = Math.pow(Math.log(freq) / Math.log(maxFrequency.value), 1 / gamma.value)
 
         for (let i = 0; i < 3; i++) {
           data[index + i] = Math.round(alpha * histogramData[index + i] / freq)
