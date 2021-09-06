@@ -70,7 +70,7 @@
                 {{ pointsRendered.toExponential(3) }} 个
               </n-descriptions-item>
               <n-descriptions-item label="绘制率">
-                {{ pointsRenderPercentage }} %
+                {{ pointsRenderPercentage.toFixed(2) }} %
               </n-descriptions-item>
               <n-descriptions-item label="最大采样频次">
                 {{ maxFrequency }} 次
@@ -114,9 +114,7 @@
             label-placement="left"
             label-align="right"
           >
-            <n-form-item
-              label="画布大小"
-            >
+            <n-form-item label="画布大小">
               <n-cascader
                 v-model:value="inputCanvasResolution"
                 leaf-only
@@ -125,9 +123,7 @@
                 :options="canvasResolutionOptions"
               />
             </n-form-item>
-            <n-form-item
-              label="反转长/高"
-            >
+            <n-form-item label="反转长/高">
               <n-checkbox
                 v-model:checked="inputShouldInvertCanvasResolution"
               />
@@ -140,18 +136,57 @@
             应用设置
           </n-button>
         </n-collapse-item>
+        <n-collapse-item title="随机化">
+          <n-form>
+            <n-form-item label="吸引子个数（范围）">
+              <n-slider
+                v-model:value="attractorsSizeRandomRange"
+                range
+                :min="3"
+                :max="8"
+                :step="1"
+                :marks="{ 3: '3', 8: '8' }"
+              />
+            </n-form-item>
+            <n-form-item label="变体子种类个数（范围）">
+              <n-slider
+                v-model:value="variationSizeRandomRange"
+                :disabled="shouldUseSelectedVariations"
+                range
+                :min="1"
+                :max="6"
+                :step="1"
+                :marks="{ 1: '1', 6: '6' }"
+              />
+            </n-form-item>
+            <n-form-item
+              label="使用指定变体子"
+              label-placement="left"
+            >
+              <n-switch v-model:value="shouldUseSelectedVariations" />
+            </n-form-item>
+            <n-form-item
+              label="指定变体子种类范围"
+              :validation-status="inputValidationSelectedVariations"
+              :feedback="inputFeedbackSelectedVariations"
+            >
+              <n-select
+                v-model:value="selectedVariations"
+                multiple
+                :options="variationOptions"
+                :disabled="!shouldUseSelectedVariations"
+              />
+            </n-form-item>
+          </n-form>
+          <n-button
+            :focusable="false"
+            @click="onRerollParameters"
+          >
+            随机生成参数
+          </n-button>
+        </n-collapse-item>
       </n-collapse>
       <n-divider />
-      <n-space vertical>
-        <n-button
-          color="#FFFFFF"
-          text-color="#000000"
-          bordered
-          @click="onRerollParameters"
-        >
-          随机生成参数
-        </n-button>
-      </n-space>
     </n-layout-sider>
     <n-layout-content
       id="canvas-container"
@@ -176,7 +211,8 @@
 import {
   NLayout, NLayoutContent, NLayoutSider, NSpace,
   NCollapse, NCollapseItem, NThing, NDescriptions, NDescriptionsItem, NForm, NFormItem,
-  NCascader, NCheckbox, NDivider, NButton, NSlider
+  NCascader, NCheckbox, NDivider, NButton, NSlider, NSelect, NSwitch,
+  useMessage
 } from 'naive-ui'
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useStore } from 'vuex'
@@ -184,11 +220,12 @@ import { cloneDeep } from 'lodash'
 import { key } from '@/store'
 import { Attractor, Point, generateRandomChosenVariations, generateRandomAttractors, VariationFunctions } from '@/utils/FractalFlameAlgorithm'
 import { normalizeArray, randomWeightedPick, toCNDatetimeString } from '@/utils/Helper'
-import { canvasResolutionOptions } from '@/utils/Constants'
+import { canvasResolutionOptions, variationOptions } from '@/utils/Constants'
 import SiderTitle from '@/components/SiderTitle.vue'
 
 const store = useStore(key)
 const flameInEditor = computed(() => store.state.flameInEditor)
+const nMessage = useMessage()
 // DOM对象
 const canvasRef = ref<HTMLCanvasElement>()
 const downloadLinkRef = ref<HTMLAnchorElement>()
@@ -226,7 +263,10 @@ const drawCallsPerFrame = ref(1000)
 const isRunning = ref(false)
 let currentAnimationFrameHandle: number
 // 随机化设置
-let chosenVariations : number[]
+const shouldUseSelectedVariations = ref(false)
+const selectedVariations = ref<number[]>([])
+const attractorsSizeRandomRange = ref<[number, number]>([3, 6])
+const variationSizeRandomRange = ref<[number, number]>([1, 6])
 // 表单输入信息（性能原因，需要点击按钮应用更改才能改动真实的参数，因此管理多一份参数对应表单）
 const inputCanvasResolution = ref('')
 const inputShouldInvertCanvasResolution = ref(false)
@@ -234,10 +274,38 @@ const inputShouldInvertCanvasResolution = ref(false)
 const dynamicDrawCallsFrameRateThresholdHigh = 60
 const dynamicDrawCallsFrameRateThresholdLow = 50
 const dynamicDrawCallsAdjustRate = 0.05
+// 绘制率过低提示参数
+const lowRenderPercentageWarningThreshold = 10
 
 const pointsRenderPercentage = computed(() => {
-  return (pointsRendered.value / pointsCalculated.value * 100).toFixed(2)
+  return pointsRendered.value / pointsCalculated.value * 100
 })
+// 表单验证
+const inputValidationSelectedVariations = computed(() => {
+  if (!shouldUseSelectedVariations.value) {
+    return 'success'
+  }
+  if (selectedVariations.value.length > 6) {
+    return 'warning'
+  } else if (selectedVariations.value.length > 0) {
+    return 'success'
+  } else {
+    return 'error'
+  }
+})
+const inputFeedbackSelectedVariations = computed(() => {
+  if (!shouldUseSelectedVariations.value) {
+    return undefined
+  }
+  if (selectedVariations.value.length > 6) {
+    return '变体子种类较多，可能会影响性能'
+  } else if (selectedVariations.value.length > 0) {
+    return undefined
+  } else {
+    return '请选择至少1个变体子'
+  }
+})
+
 // 监听isRunning，控制计算过程
 watch(isRunning, (newValue) => {
   if (newValue) {
@@ -286,12 +354,32 @@ function onToggleCanvasRunning () {
 }
 
 function onRerollParameters () {
+  // 自定义表单验证：使用指定变体子，但没有选择变体子
+  if (shouldUseSelectedVariations.value && !selectedVariations.value.length) {
+    nMessage.error('无法随机化参数。请至少选择1种变体子')
+    return
+  }
   isRunning.value = false
   reset()
-  chosenVariations = generateRandomChosenVariations(2, 6, VariationFunctions)
-  attractors.value = generateRandomAttractors(3, 5, chosenVariations, VariationFunctions)
+  if (!shouldUseSelectedVariations.value) { // 不使用指定的吸引子种类，则随机化
+    selectedVariations.value = generateRandomChosenVariations(
+      variationSizeRandomRange.value[0],
+      variationSizeRandomRange.value[1],
+      VariationFunctions
+    )
+  }
+  attractors.value = generateRandomAttractors(
+    attractorsSizeRandomRange.value[0],
+    attractorsSizeRandomRange.value[1],
+    selectedVariations.value,
+    VariationFunctions
+  )
   currentWeights = normalizeArray(attractors.value.map(val => val.weight), 1, true, -4)
   isRunning.value = true
+  // 如果新随机的参数较差，则提醒用户调整参数
+  setTimeout(() => {
+    checkLowRenderPercentage()
+  }, 1000)
 }
 
 // 将HistogramData渲染到canvas上（基于对数着色，gamma，更新imageData的值）
@@ -322,7 +410,7 @@ function onRenderCanvas () {
 function onDownloadImage () {
   isRunning.value = false
   if (canvasRef.value && downloadLinkRef.value) {
-    downloadLinkRef.value.setAttribute('download', `FracFlame_${Date.now()}.png`)
+    downloadLinkRef.value.setAttribute('download', `FracFlame_${flameInEditor.value?.title}_${toCNDatetimeString(Date.now())}.png`)
     downloadLinkRef.value.setAttribute('href', canvasRef.value.toDataURL('image/png').replace('image/png', 'image/octet-stream'))
     downloadLinkRef.value.click()
   }
@@ -417,6 +505,12 @@ function reset () {
     pointsCalculated.value = 0
     pointsRendered.value = 0
     drawCallsPerFrame.value = 1000
+  }
+}
+
+function checkLowRenderPercentage () {
+  if (pointsRenderPercentage.value < lowRenderPercentageWarningThreshold) {
+    nMessage.warning('当前点绘制率过低，建议调整参数')
   }
 }
 

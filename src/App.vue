@@ -3,12 +3,17 @@
     :theme="darkTheme"
     :theme-overrides="themeOverrides"
   >
-    <router-view />
+    <n-message-provider>
+      <router-view />
+    </n-message-provider>
   </n-config-provider>
 </template>
 
 <script lang="ts" setup>
-import { NConfigProvider, darkTheme, GlobalThemeOverrides } from 'naive-ui'
+import {
+  NConfigProvider, darkTheme, GlobalThemeOverrides,
+  NMessageProvider
+} from 'naive-ui'
 
 const themeOverrides: GlobalThemeOverrides = {
   common: {
