@@ -47,10 +47,11 @@
       <n-divider />
       <n-collapse>
         <n-collapse-item title="画布设置">
-          <n-form>
+          <n-form
+            label-placement="left"
+          >
             <n-form-item
               label="画布大小"
-              path="canvasResolution"
             >
               <n-cascader
                 v-model:value="inputCanvasResolution"
@@ -58,6 +59,13 @@
                 expand-trigger="hover"
                 :show-path="false"
                 :options="canvasResolutionOptions"
+              />
+            </n-form-item>
+            <n-form-item
+              label="反转长/高"
+            >
+              <n-checkbox
+                v-model:checked="inputShouldInvertCanvasResolution"
               />
             </n-form-item>
             <n-form-item>
@@ -137,7 +145,7 @@ import {
   NLayout, NLayoutContent, NLayoutSider,
   NIcon, NDivider, NSpace, NButton,
   NThing, NUl, NLi, NCollapse, NCollapseItem,
-  NCascader
+  NForm, NFormItem, NCascader, NCheckbox
 } from 'naive-ui'
 import { Fire } from '@vicons/fa'
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
@@ -187,6 +195,7 @@ let currentAnimationFrameHandle: number
 let chosenVariations : number[]
 // 表单输入信息（性能原因，需要点击按钮应用更改才能改动真实的参数，因此管理多一份参数对应表单）
 const inputCanvasResolution = ref('')
+const inputShouldInvertCanvasResolution = ref(false)
 
 const pointsRenderPercentage = computed(() => {
   return (Math.round(pointsRendered.value / pointsCalculated.value * 10000) / 100).toString()
@@ -219,7 +228,12 @@ onMounted(() => {
     // 计算权重缓存
     currentWeights = normalizeArray(attractors.value.map(val => val.weight), 1, true, -4)
     // 赋值给表单用的变量
-    inputCanvasResolution.value = `{"width": ${canvasWidth.value}, "height": ${canvasHeight.value}}`
+    inputShouldInvertCanvasResolution.value = canvasHeight.value > canvasWidth.value
+    if (inputShouldInvertCanvasResolution.value) {
+      inputCanvasResolution.value = `{"width": ${canvasHeight.value}, "height": ${canvasWidth.value}}`
+    } else {
+      inputCanvasResolution.value = `{"width": ${canvasWidth.value}, "height": ${canvasHeight.value}}`
+    }
   }
 
   if (canvasRef.value) {
@@ -277,8 +291,13 @@ function onDownloadImage () {
 async function onApplyCanvasSettings () {
   isRunning.value = false
   const canvasResolution = JSON.parse(inputCanvasResolution.value)
-  canvasWidth.value = canvasResolution.width
-  canvasHeight.value = canvasResolution.height
+  if (inputShouldInvertCanvasResolution.value) {
+    canvasWidth.value = canvasResolution.height
+    canvasHeight.value = canvasResolution.width
+  } else {
+    canvasWidth.value = canvasResolution.width
+    canvasHeight.value = canvasResolution.height
+  }
   await nextTick() // 应用对canvas的修改
   reset()
   isRunning.value = true
