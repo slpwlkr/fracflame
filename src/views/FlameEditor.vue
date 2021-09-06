@@ -47,24 +47,28 @@
       <n-divider />
       <n-collapse>
         <n-collapse-item title="画布设置">
-          <span>画布长度</span>
-          <n-input-number
-            v-model:value="inputCanvasWidth"
-            :max="canvasWidthMax"
-            :min="canvasWidthMin"
-          />
-          <span>画布高度</span>
-          <n-input-number
-            v-model:value="inputCanvasHeight"
-            :max="canvasHeightMax"
-            :min="canvasHeightMin"
-          />
-          <n-button
-            :focusable="false"
-            @click="onApplyCanvasSettings"
-          >
-            应用设置
-          </n-button>
+          <n-form>
+            <n-form-item
+              label="画布大小"
+              path="canvasResolution"
+            >
+              <n-cascader
+                v-model:value="inputCanvasResolution"
+                leaf-only
+                expand-trigger="hover"
+                :show-path="false"
+                :options="canvasResolutionOptions"
+              />
+            </n-form-item>
+            <n-form-item>
+              <n-button
+                :focusable="false"
+                @click="onApplyCanvasSettings"
+              >
+                应用设置
+              </n-button>
+            </n-form-item>
+          </n-form>
         </n-collapse-item>
       </n-collapse>
       <n-divider />
@@ -133,7 +137,7 @@ import {
   NLayout, NLayoutContent, NLayoutSider,
   NIcon, NDivider, NSpace, NButton,
   NThing, NUl, NLi, NCollapse, NCollapseItem,
-  NInputNumber
+  NCascader
 } from 'naive-ui'
 import { Fire } from '@vicons/fa'
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
@@ -142,6 +146,7 @@ import { cloneDeep } from 'lodash'
 import { key } from '@/store'
 import { Attractor, Point, generateRandomChosenVariations, generateRandomAttractors, VariationFunctions } from '@/utils/FractalFlameAlgorithm'
 import { normalizeArray, randomWeightedPick, toCNDatetimeString } from '@/utils/Helper'
+import { canvasResolutionOptions } from '@/utils/Constants'
 import SiderTitle from '@/components/SiderTitle.vue'
 
 const store = useStore(key)
@@ -180,13 +185,8 @@ const isRunning = ref(false)
 let currentAnimationFrameHandle: number
 // 随机化设置
 let chosenVariations : number[]
-// 输入信息（性能原因，需要点击按钮应用更改才能改动真实的参数，因此管理多一份参数对应表单）
-const inputCanvasWidth = ref(512)
-const inputCanvasHeight = ref(512)
-const canvasWidthMax = 1920
-const canvasWidthMin = 320
-const canvasHeightMax = 1080
-const canvasHeightMin = 320
+// 表单输入信息（性能原因，需要点击按钮应用更改才能改动真实的参数，因此管理多一份参数对应表单）
+const inputCanvasResolution = ref('')
 
 const pointsRenderPercentage = computed(() => {
   return (Math.round(pointsRendered.value / pointsCalculated.value * 10000) / 100).toString()
@@ -219,8 +219,7 @@ onMounted(() => {
     // 计算权重缓存
     currentWeights = normalizeArray(attractors.value.map(val => val.weight), 1, true, -4)
     // 赋值给表单用的变量
-    inputCanvasWidth.value = canvasWidth.value
-    inputCanvasHeight.value = canvasHeight.value
+    inputCanvasResolution.value = `{"width": ${canvasWidth.value}, "height": ${canvasHeight.value}}`
   }
 
   if (canvasRef.value) {
@@ -277,10 +276,9 @@ function onDownloadImage () {
 
 async function onApplyCanvasSettings () {
   isRunning.value = false
-  inputCanvasWidth.value = Math.round(inputCanvasWidth.value)
-  inputCanvasHeight.value = Math.round(inputCanvasHeight.value)
-  canvasWidth.value = inputCanvasWidth.value
-  canvasHeight.value = inputCanvasHeight.value
+  const canvasResolution = JSON.parse(inputCanvasResolution.value)
+  canvasWidth.value = canvasResolution.width
+  canvasHeight.value = canvasResolution.height
   await nextTick() // 应用对canvas的修改
   reset()
   isRunning.value = true
