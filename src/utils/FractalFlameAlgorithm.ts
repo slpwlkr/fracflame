@@ -1,4 +1,4 @@
-import { randomInRange, normalizeArray, randomPermutation } from './Helper'
+import { randomInRange, normalizeArray, toFixedNumber, randomPermutation } from './Helper'
 
 export class Color {
   r: number
@@ -21,6 +21,21 @@ export class Color {
     target.r = Math.round((target.r + source.r) / 2)
     target.g = Math.round((target.g + source.g) / 2)
     target.b = Math.round((target.b + source.b) / 2)
+  }
+
+  // 将rgb(1, 1, 1)模式的字符串匹配为对应对象，失败返回默认值
+  static parseString (value: string): Color {
+    const regex = /rgb\((\d{1,3}), (\d{1,3}), (\d{1,3})\)/g
+    const result = regex.exec(value)
+    if (result) {
+      return new Color(false, parseInt(result[1]), parseInt(result[2]), parseInt(result[3]))
+    } else {
+      return new Color()
+    }
+  }
+
+  static toString (color: Color): string {
+    return `rgb(${color.r}, ${color.g}, ${color.b})`
   }
 }
 
@@ -495,7 +510,7 @@ export const VariationFunctions: IVariationFunction[] = [
     }
   }
 ]
-class Variation {
+export class Variation {
   typeIndex: number
   weight: number
   functionInfo: IVariationFunction
@@ -516,7 +531,7 @@ export class Attractor {
   constructor (
     random = false,
     affineParams = [1, 0, 0, 0, 1, 0],
-    weight = 1, color = new Color(false, 1, 1, 1),
+    weight = 1, color = new Color(false, 0, 0, 0),
     chosenVariations: number[] = [0],
     variationFunctions: IVariationFunction[] = [
       {
@@ -530,9 +545,9 @@ export class Attractor {
     if (random) {
       this.affineParams = []
       for (let i = 0; i < 6; i++) {
-        this.affineParams.push(randomInRange(false, -1, 1))
+        this.affineParams.push(toFixedNumber(randomInRange(false, -1, 1), 4))
       }
-      this.weight = Math.random()
+      this.weight = toFixedNumber(Math.random(), 4)
       this.color = new Color(true)
 
       // 从给定范围中随机选若干个不重复的变体子
@@ -544,7 +559,7 @@ export class Attractor {
       for (let i = 0; i < variationSize; i++) {
         variationWeights[i] = Math.random()
       }
-      variationWeights = [...normalizeArray(variationWeights, 1, true, -4)]
+      variationWeights = [...normalizeArray(variationWeights, 1, true, 4)]
       for (let i = 0; i < variationSize; i++) {
         const chosenIndex = chosenVariations[localChosenVariations[i]]
         this.variations[i] = new Variation(chosenIndex, variationWeights[i], variationFunctions[chosenIndex])
@@ -610,7 +625,7 @@ export function generateRandomAttractors (
 
   // 归一权重, 默认权重和为1， 精确至小数点后4位
   const oldWeights = attractors.map(i => i.weight)
-  const newWeights = normalizeArray(oldWeights, 1, true, -4)
+  const newWeights = normalizeArray(oldWeights, 1, true, 4)
   attractors.forEach((attractor, index) => {
     attractor.weight = newWeights[index]
   })

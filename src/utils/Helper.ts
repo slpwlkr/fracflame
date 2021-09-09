@@ -12,6 +12,11 @@ function toPercentageString (num: number): string {
   return (num * 100).toString() + '%'
 }
 
+function toFixedNumber (num: number, digits: number): number {
+  const base = Math.pow(10, Math.round(digits))
+  return Math.round((num + Number.EPSILON) * base) / base
+}
+
 function normalizeArray (array: number[], scale: number, shouldRound: boolean, round = 0): number[] {
   let sum = 0
   const newArray = [...array]
@@ -22,11 +27,10 @@ function normalizeArray (array: number[], scale: number, shouldRound: boolean, r
     newArray[i] *= scale / sum
   })
 
-  // round 表示四舍五入位数，正为小数点前位数，负为小数点后位数，0为个位四舍五入
+  // round 表示四舍五入位数，负为小数点前位数，正为小数点后位数，0为个位四舍五入
   if (shouldRound) {
-    const base = Math.pow(10, -round)
     newArray.forEach((e, i) => {
-      newArray[i] = Math.round((newArray[i] + Number.EPSILON) * base) / base
+      newArray[i] = toFixedNumber(newArray[i], round)
     })
 
     // 用最后一项消除误差
@@ -75,4 +79,4 @@ function toCNDatetimeString (time: number): string {
   return new Date(time).toLocaleString('zh-CN', { hour12: false })
 }
 
-export { randomInRange, toPercentageString, normalizeArray, randomWeightedPick, randomPermutation, toCNDatetimeString }
+export { randomInRange, toPercentageString, toFixedNumber, normalizeArray, randomWeightedPick, randomPermutation, toCNDatetimeString }

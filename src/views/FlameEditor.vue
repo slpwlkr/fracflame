@@ -142,8 +142,8 @@
               <n-slider
                 v-model:value="attractorsSizeRandomRange"
                 range
-                :min="3"
-                :max="8"
+                :min="sizeLimits.attractorSizeMin"
+                :max="sizeLimits.attractorSizeMax"
                 :step="1"
                 :marks="{ 3: '3', 8: '8' }"
               />
@@ -153,8 +153,8 @@
                 v-model:value="variationSizeRandomRange"
                 :disabled="shouldUseSelectedVariations"
                 range
-                :min="1"
-                :max="6"
+                :min="sizeLimits.variationSizeMin"
+                :max="sizeLimits.variationSizeMax"
                 :step="1"
                 :marks="{ 1: '1', 6: '6' }"
               />
@@ -184,6 +184,12 @@
           >
             随机生成参数
           </n-button>
+        </n-collapse-item>
+        <n-collapse-item title="吸引子参数">
+          <sider-attractor-list
+            :attractors="attractors"
+            @update:attractors="onApplyAttractorsSettings"
+          />
         </n-collapse-item>
       </n-collapse>
       <n-divider />
@@ -220,8 +226,9 @@ import { cloneDeep } from 'lodash'
 import { key } from '@/store'
 import { Attractor, Point, generateRandomChosenVariations, generateRandomAttractors, VariationFunctions } from '@/utils/FractalFlameAlgorithm'
 import { normalizeArray, randomWeightedPick, toCNDatetimeString } from '@/utils/Helper'
-import { canvasResolutionOptions, variationOptions } from '@/utils/Constants'
+import { canvasResolutionOptions, variationOptions, sizeLimits } from '@/utils/Constants'
 import SiderTitle from '@/components/SiderTitle.vue'
+import SiderAttractorList from '@/components/SiderAttractorList.vue'
 
 const store = useStore(key)
 const flameInEditor = computed(() => store.state.flameInEditor)
@@ -293,6 +300,7 @@ const inputValidationSelectedVariations = computed(() => {
     return 'error'
   }
 })
+
 const inputFeedbackSelectedVariations = computed(() => {
   if (!shouldUseSelectedVariations.value) {
     return undefined
@@ -334,7 +342,7 @@ onMounted(() => {
     histogramData = new Uint32Array(flameInEditor.value.histogramData)
     drawPoint = Object.create(flameInEditor.value.drawPoint)
     // 计算权重缓存
-    currentWeights = normalizeArray(attractors.value.map(val => val.weight), 1, true, -4)
+    currentWeights = normalizeArray(attractors.value.map(val => val.weight), 1, true, 4)
     // 赋值给表单用的变量
     inputShouldInvertCanvasResolution.value = canvasHeight.value > canvasWidth.value
     if (inputShouldInvertCanvasResolution.value) {
@@ -374,7 +382,7 @@ function onRerollParameters () {
     selectedVariations.value,
     VariationFunctions
   )
-  currentWeights = normalizeArray(attractors.value.map(val => val.weight), 1, true, -4)
+  currentWeights = normalizeArray(attractors.value.map(val => val.weight), 1, true, 4)
   isRunning.value = true
   // 如果新随机的参数较差，则提醒用户调整参数
   setTimeout(() => {
@@ -429,6 +437,18 @@ async function onApplyCanvasSettings () {
   await nextTick() // 应用对canvas的修改
   reset()
   isRunning.value = true
+}
+
+function onApplyAttractorsSettings (newAttractors: Attractor[]) {
+  isRunning.value = false
+  reset()
+  attractors.value = newAttractors
+  currentWeights = normalizeArray(attractors.value.map(val => val.weight), 1, true, 4)
+  isRunning.value = true
+  // 如果新随机的参数较差，则提醒用户调整参数
+  setTimeout(() => {
+    checkLowRenderPercentage()
+  }, 1000)
 }
 
 function step () {

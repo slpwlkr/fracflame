@@ -230,4 +230,11 @@ const variationOptions = [
   }
 ]
 
-export { canvasResolutionOptions, variationOptions }
+const sizeLimits = {
+  attractorSizeMin: 3,
+  attractorSizeMax: 8,
+  variationSizeMin: 1,
+  variationSizeMax: 6
+}
+
+export { canvasResolutionOptions, variationOptions, sizeLimits }
