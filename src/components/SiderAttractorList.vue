@@ -1,8 +1,12 @@
 <template>
-  <n-space vertical>
+  <n-space
+    vertical
+    :size="24"
+  >
     <n-collapse>
       <n-collapse-item
         v-for="(item, index) in localAttractors"
+        :id="`attractor-list-item-${index}`"
         :key="index"
         :title="`吸引子 ${index + 1}`"
       >
@@ -24,19 +28,31 @@
         </template>
       </n-collapse-item>
     </n-collapse>
-    <n-button
-      :focusable="false"
-      :disabled="localAttractors.length >= sizeLimits.attractorSizeMax"
-      @click="addAttractor"
+    <n-grid
+      :col="24"
+      :x-gap="9"
+      :y-gap="24"
     >
-      新增吸引子
-    </n-button>
-    <n-button
-      :focusable="false"
-      @click="onApplyChange"
-    >
-      应用更改
-    </n-button>
+      <n-gi :span="12">
+        <n-button
+          :focusable="false"
+          :disabled="localAttractors.length >= sizeLimits.attractorSizeMax"
+          class="form-button"
+          @click="addAttractor"
+        >
+          新增吸引子
+        </n-button>
+      </n-gi>
+      <n-gi :span="12">
+        <n-button
+          :focusable="false"
+          class="form-button"
+          @click="onApplyChange"
+        >
+          应用更改
+        </n-button>
+      </n-gi>
+    </n-grid>
   </n-space>
 </template>
 
@@ -44,7 +60,7 @@
 
 import { ref, PropType, watch } from 'vue'
 import { cloneDeep } from 'lodash'
-import { NSpace, NCollapse, NCollapseItem, NButton, NIcon } from 'naive-ui'
+import { NSpace, NCollapse, NCollapseItem, NGrid, NGi, NButton, NIcon } from 'naive-ui'
 import { Times } from '@vicons/fa'
 import { Attractor } from '@/utils/FractalFlameAlgorithm'
 import { sizeLimits } from '@/utils/Constants'
@@ -86,5 +102,11 @@ function onApplyChange () {
 </script>
 
 <style scoped>
-
+.form-button {
+  height: 48px;
+  width: 100%;
+}
+.n-collapse-item[id^="attractor-list-item-"]{
+  margin-left: 12px;
+}
 </style>

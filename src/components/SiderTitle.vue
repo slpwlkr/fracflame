@@ -1,33 +1,31 @@
 <template>
-  <n-space align="center">
+  <n-space :size="24">
     <n-button
       id="return-button"
+      :focusable="false"
       size="large"
-      circle
+      round
       text
     >
       <template #icon>
-        <n-icon>
-          <arrow-left />
+        <n-icon
+          color="white"
+          :size="35"
+        >
+          <gripfire />
         </n-icon>
       </template>
     </n-button>
-    <n-icon
-      color="white"
-      size="30"
-    >
-      <gripfire />
-    </n-icon>
-    <n-text id="logo-text">
+    <n-h2 id="logo-text">
       分形焰火
-    </n-text>
+    </n-h2>
   </n-space>
 </template>
 
 <script lang="ts" setup>
 
-import { NIcon, NButton, NSpace, NH1, NText } from 'naive-ui'
-import { Gripfire, ArrowLeft } from '@vicons/fa'
+import { NIcon, NButton, NSpace, NH2 } from 'naive-ui'
+import { Gripfire } from '@vicons/fa'
 
 const props = defineProps({
   routerLink: {
@@ -40,7 +38,6 @@ const props = defineProps({
 
 <style scoped>
 #logo-text {
-  font-size: 150%;
-  color: #FFFFFF;
+  margin-bottom: 0px;
 }
 </style>

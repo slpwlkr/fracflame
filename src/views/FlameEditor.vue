@@ -7,32 +7,63 @@
       id="sider"
       bordered
       content-style="padding: 24px"
-      width="360px"
+      width="400px"
+      collapse-mode="transform"
+      :collapsed-width="0"
+      show-trigger="bar"
       :native-scrollbar="false"
     >
       <sider-title />
       <n-divider />
-      <n-thing>
-        <template #header>
-          {{ title }}
-        </template>
-        <template #action>
-          <n-space justify="space-around">
-            <n-button
-              :focusable="false"
-              @click="onDownloadImage"
-            >
-              保存并上传
-            </n-button>
-            <n-button
-              :focusable="false"
-              @click="onDownloadImage"
-            >
-              下载图像
-            </n-button>
-          </n-space>
-        </template>
-      </n-thing>
+      <n-grid
+        :col="24"
+        :x-gap="9"
+        :y-gap="9"
+      >
+        <n-gi :span="22">
+          <n-h2
+            id="flame-title"
+            prefix="bar"
+          >
+            {{ title }}
+          </n-h2>
+        </n-gi>
+        <n-gi :span="2">
+          <n-button
+            size="large"
+            :focusable="false"
+            round
+            text
+            @click="inputShouldShowRenameTitleModal = true"
+          >
+            <template #icon>
+              <n-icon
+                :size="20"
+              >
+                <edit />
+              </n-icon>
+            </template>
+          </n-button>
+        </n-gi>
+        <n-gi :span="12">
+          <n-button
+            :focusable="false"
+            class="form-button"
+            @click="onDownloadImage"
+          >
+            保存并上传
+          </n-button>
+        </n-gi>
+        <n-gi :span="12">
+          <n-button
+            :focusable="false"
+            class="form-button"
+            @click="onDownloadImage"
+          >
+            下载图像
+          </n-button>
+        </n-gi>
+      </n-grid>
       <n-divider />
       <n-collapse>
         <n-collapse-item title="基础信息">
@@ -84,6 +115,7 @@
             </n-descriptions>
             <n-button
               :focusable="false"
+              class="form-button"
               @click="onToggleCanvasRunning"
             >
               {{ isRunning ? '暂停计算' : '开始计算' }}
@@ -104,6 +136,7 @@
           </n-form>
           <n-button
             :focusable="false"
+            class="form-button"
             @click="onRenderCanvas"
           >
             渲染图像
@@ -126,11 +159,13 @@
             <n-form-item label="反转长/高">
               <n-checkbox
                 v-model:checked="inputShouldInvertCanvasResolution"
+                :focusable="false"
               />
             </n-form-item>
           </n-form>
           <n-button
             :focusable="false"
+            class="form-button"
             @click="onApplyCanvasSettings"
           >
             应用设置
@@ -180,6 +215,7 @@
           </n-form>
           <n-button
             :focusable="false"
+            class="form-button"
             @click="onRerollParameters"
           >
             随机生成参数
@@ -210,16 +246,45 @@
       />
     </n-layout-content>
   </n-layout>
+  <n-modal
+    v-model:show="inputShouldShowRenameTitleModal"
+  >
+    <n-card
+      id="rename-title-modal-card"
+      title="修改标题"
+      size="large"
+      :closable="true"
+      @close="inputShouldShowRenameTitleModal = false"
+    >
+      <n-input
+        v-model:value="inputTitle"
+        placeholder="请输入新的标题"
+        size="large"
+        :minlength="sizeLimits.flameTitleLengthMin"
+        :maxlength="sizeLimits.flameTitleLengthMax"
+        show-count
+      />
+      <n-button
+        :focusable="false"
+        class="modal-button"
+        :disabled="inputTitle.length < sizeLimits.flameTitleLengthMin"
+        @click="onRenameTitle"
+      >
+        提交修改
+      </n-button>
+    </n-card>
+  </n-modal>
 </template>
 
 <script lang="ts" setup>
 
 import {
-  NLayout, NLayoutContent, NLayoutSider, NSpace,
-  NCollapse, NCollapseItem, NThing, NDescriptions, NDescriptionsItem, NForm, NFormItem,
-  NCascader, NCheckbox, NDivider, NButton, NSlider, NSelect, NSwitch,
-  useMessage
+  NLayout, NLayoutContent, NLayoutSider, NSpace, NGrid, NGi,
+  NCollapse, NCollapseItem, NDescriptions, NDescriptionsItem, NForm, NFormItem,
+  NCascader, NCheckbox, NDivider, NButton, NSlider, NSelect, NSwitch, NInput,
+  useMessage, NH2, NIcon, NModal, NCard
 } from 'naive-ui'
+import { Edit } from '@vicons/fa'
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useStore } from 'vuex'
 import { cloneDeep } from 'lodash'
@@ -277,6 +342,8 @@ const variationSizeRandomRange = ref<[number, number]>([1, 6])
 // 表单输入信息（性能原因，需要点击按钮应用更改才能改动真实的参数，因此管理多一份参数对应表单）
 const inputCanvasResolution = ref('')
 const inputShouldInvertCanvasResolution = ref(false)
+const inputShouldShowRenameTitleModal = ref(false)
+const inputTitle = ref(title.value)
 // 动态调整帧率参数
 const dynamicDrawCallsFrameRateThresholdHigh = 60
 const dynamicDrawCallsFrameRateThresholdLow = 50
@@ -350,6 +417,7 @@ onMounted(() => {
     } else {
       inputCanvasResolution.value = `{"width": ${canvasWidth.value}, "height": ${canvasHeight.value}}`
     }
+    inputTitle.value = title.value
   }
 
   if (canvasRef.value) {
@@ -449,6 +517,13 @@ function onApplyAttractorsSettings (newAttractors: Attractor[]) {
   setTimeout(() => {
     checkLowRenderPercentage()
   }, 1000)
+}
+
+function onRenameTitle () {
+  if (inputTitle.value && inputTitle.value.length > 0) {
+    title.value = inputTitle.value
+    inputShouldShowRenameTitleModal.value = false
+  }
 }
 
 function step () {
@@ -554,5 +629,24 @@ function checkLowRenderPercentage () {
 }
 #sider {
   background-color: black;
+}
+#flame-title {
+  margin-bottom: 8px;
+}
+.form-button {
+  height: 48px;
+  width: 100%;
+}
+.modal-button {
+  height: 40px;
+  width: 100%;
+  margin-top: 24px
+}
+.n-divider {
+  margin-top: 18px;
+  margin-bottom: 18px;
+}
+#rename-title-modal-card {
+  width: 480px
 }
 </style>

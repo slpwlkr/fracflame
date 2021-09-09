@@ -1,3 +1,56 @@
+import {
+  GlobalThemeOverrides
+} from 'naive-ui'
+
+const themeOverrides: GlobalThemeOverrides = {
+  common: {
+    baseColor: 'black',
+    textColorBase: 'white'
+  },
+  Layout: {
+    siderBorderColor: 'white'
+  },
+  Divider: {
+    color: 'white'
+  },
+  Button: {
+    borderRadiusMedium: '0px',
+    border: '1px solid rgb(255, 255, 255)',
+    color: 'rgb(32, 32, 32)'
+  },
+  Collapse: {
+    dividerColor: 'white'
+  },
+  Descriptions: {
+    thColor: 'rgb(32, 32, 32)',
+    tdColor: 'black',
+    borderColor: 'lightgray',
+    borderRadius: '0px'
+  },
+  Typography: {
+    headerBarColor: 'white'
+  },
+  Checkbox: {
+    border: '1px solid rgba(255, 255, 255, 0.9)',
+    borderRadius: '0px'
+  },
+  Input: {
+    color: 'black',
+    colorFocus: 'rgb(32, 32, 32)',
+    border: '1px solid rgb(255, 255, 255, 0.9)',
+    borderRadius: '0px'
+  },
+  InternalSelection: {
+    border: '1px solid rgb(255, 255, 255, 0.9)',
+    borderRadius: '0px',
+    color: 'black'
+  },
+  ColorPicker: {
+    border: '1px solid rgb(255, 255, 255, 0.9)',
+    borderRadius: '0px'
+  }
+}
+
 const canvasResolutionOptions = [
   {
     label: '1:1',
@@ -234,7 +287,9 @@ const sizeLimits = {
   attractorSizeMin: 3,
   attractorSizeMax: 8,
   variationSizeMin: 1,
-  variationSizeMax: 6
+  variationSizeMax: 6,
+  flameTitleLengthMin: 1,
+  flameTitleLengthMax: 64
 }
 
-export { canvasResolutionOptions, variationOptions, sizeLimits }
+export { themeOverrides, canvasResolutionOptions, variationOptions, sizeLimits }

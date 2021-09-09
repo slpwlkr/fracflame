@@ -102,6 +102,7 @@
       <n-form-item-gi
         label="变体子"
         :span="24"
+        class="variation-form-item"
       >
         <n-space vertical>
           <n-form
@@ -113,12 +114,17 @@
             <n-grid
               :cols="24"
               :x-gap="12"
+              :y-gap="0"
             >
-              <n-form-item-gi :span="2">
+              <n-form-item-gi
+                :span="2"
+                class="variation-form-item"
+              >
                 {{ index + 1 }}.
               </n-form-item-gi>
               <n-form-item-gi
-                :span="8"
+                :span="10"
+                class="variation-form-item"
               >
                 <n-select
                   :value="item.typeIndex"
@@ -128,17 +134,20 @@
               </n-form-item-gi>
               <n-form-item-gi
                 :span="10"
+                class="variation-form-item"
               >
                 <n-slider
                   :value="item.weight"
                   :max="1"
                   :min="0"
                   :step="0.01"
-                  :marks="{ 0: '0', 1: '1' }"
                   @update:value="(value)=>{ updateAttractor('variationWeight', value || 0, index) }"
                 />
               </n-form-item-gi>
-              <n-form-item-gi :span="2">
+              <n-form-item-gi
+                :span="2"
+                class="variation-form-item"
+              >
                 <n-button
                   :focusable="false"
                   :disabled="localAttractor.variations.length <= 1"
@@ -157,10 +166,14 @@
           </n-form>
         </n-space>
       </n-form-item-gi>
-      <n-form-item-gi :span="24">
+      <n-form-item-gi
+        :span="24"
+        class="variation-form-item"
+      >
         <n-button
           :focusable="false"
           :disabled="localAttractor.variations.length >= sizeLimits.variationSizeMax"
+          class="form-button"
           @click="updateAttractor('variationAdd', 0, 0)"
         >
           新增变体子
@@ -247,6 +260,16 @@ function updateAttractor (key: string, value: number | string = 0, index = 0) {
 <style scoped>
 .n-form[id^="variation-form-"] {
   width: 100%;
-  height: 90px;
+}
+
+.variation-form-item >>> .n-form-item{
+  --blank-height: 8px !important;
+  --label-height: 8px !important;
+  --feedback-height: 8px !important;
+}
+
+.form-button {
+  height: 32px;
+  width: 100%;
 }
 </style>

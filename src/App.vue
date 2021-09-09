@@ -11,26 +11,9 @@
 
 <script lang="ts" setup>
 import {
-  NConfigProvider, darkTheme, GlobalThemeOverrides,
-  NMessageProvider
+  NConfigProvider, darkTheme, NMessageProvider
 } from 'naive-ui'
-
-const themeOverrides: GlobalThemeOverrides = {
-  common: {
-    baseColor: 'black',
-    textColorBase: 'white'
-  },
-  Layout: {
-    siderBorderColor: 'white'
-  },
-  Divider: {
-    color: 'white'
-  },
-  Button: {
-    borderRadiusMedium: '0px',
-    border: '1px solid rgb(255, 255, 255)'
-  }
-}
+import { themeOverrides } from './utils/Constants'
 
 </script>
 
