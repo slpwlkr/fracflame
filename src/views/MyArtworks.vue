@@ -21,7 +21,7 @@
 
 <script lang="ts" setup>
 
-import { ref, computed } from 'vue'
+import { computed } from 'vue'
 import { useStore } from 'vuex'
 import { NH1, NGrid, NGi } from 'naive-ui'
 import { key } from '@/store'
