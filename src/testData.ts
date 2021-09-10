@@ -1,5 +1,5 @@
 import { Attractor, Color, Point, VariationFunctions } from '@/utils/FractalFlameAlgorithm'
-import { IFlameInEditor } from './store'
+import { IFlameInEditor, IUser } from './store'
 
 const testAttractors1: Attractor[] = [
   new Attractor(
@@ -53,3 +53,14 @@ export const testFlameInEditor: IFlameInEditor = {
   pointsCalculated: 0,
   pointsRendered: 0
 }
+
+export const testUser: IUser = {
+  userID: '1',
+  username: 'slpwlkr'
+}
+
+export const testHomeCarouselImages = [
+  'default_flame_1.png',
+  'default_flame_2.png',
+  'default_flame_3.png'
+]

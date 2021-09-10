@@ -13,7 +13,7 @@
       show-trigger="bar"
       :native-scrollbar="false"
     >
-      <sider-title />
+      <sider-title router-link="/my-artworks" />
       <n-divider />
       <n-grid
         :col="24"

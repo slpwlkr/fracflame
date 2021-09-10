@@ -79,4 +79,8 @@ function toCNDatetimeString (time: number): string {
   return new Date(time).toLocaleString('zh-CN', { hour12: false })
 }
 
-export { randomInRange, toPercentageString, toFixedNumber, normalizeArray, randomWeightedPick, randomPermutation, toCNDatetimeString }
+function getImageURL (name: string): string {
+  return require(`@/assets/${name}`)
+}
+
+export { randomInRange, toPercentageString, toFixedNumber, normalizeArray, randomWeightedPick, randomPermutation, toCNDatetimeString, getImageURL }

@@ -6,6 +6,7 @@
       size="large"
       round
       text
+      @click="router.push(routerLink)"
     >
       <template #icon>
         <n-icon
@@ -26,6 +27,7 @@
 
 import { NIcon, NButton, NSpace, NH2 } from 'naive-ui'
 import { Gripfire } from '@vicons/fa'
+import { useRouter } from 'vue-router'
 
 const props = defineProps({
   routerLink: {
@@ -33,6 +35,8 @@ const props = defineProps({
     default: '/'
   }
 })
+
+const router = useRouter()
 
 </script>
 
