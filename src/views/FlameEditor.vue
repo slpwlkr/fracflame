@@ -296,6 +296,7 @@ import SiderTitle from '@/components/SiderTitle.vue'
 import SiderAttractorList from '@/components/SiderAttractorList.vue'
 
 const store = useStore(key)
+store.commit('setIsInEditor', true)
 const flameInEditor = computed(() => store.state.flameInEditor)
 const nMessage = useMessage()
 // DOM对象

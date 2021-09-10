@@ -53,6 +53,7 @@ import { key } from '@/store'
 import { getImageURL } from '@/utils/Helper'
 
 const store = useStore(key)
+store.commit('setIsInEditor', false)
 
 const carouselImages = computed(() => {
   return store.state.homeCarouselImages

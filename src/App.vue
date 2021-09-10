@@ -5,6 +5,7 @@
   >
     <n-message-provider>
       <n-layout
+        v-if="!isInEditor"
         position="absolute"
         has-sider
       >
@@ -27,17 +28,27 @@
           <router-view />
         </n-layout-content>
       </n-layout>
+      <router-view v-if="isInEditor" />
     </n-message-provider>
   </n-config-provider>
 </template>
 
 <script lang="ts" setup>
+
 import {
   NConfigProvider, darkTheme, NMessageProvider,
   NLayout, NLayoutContent, NLayoutSider
 } from 'naive-ui'
+import { computed } from 'vue'
+import { useStore } from 'vuex'
+import { key } from '@/store'
 import { themeOverrides } from './utils/Constants'
 import SiderGlobalMenu from './components/SiderGlobalMenu.vue'
+
+const store = useStore(key)
+const isInEditor = computed(() => {
+  return store.state.isInEditor
+})
 
 </script>
 

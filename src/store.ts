@@ -1,6 +1,7 @@
 import { InjectionKey } from 'vue'
 import { createStore, Store } from 'vuex'
-import { Attractor, Point } from '@/utils/FractalFlameAlgorithm'
+import { Attractor, Point, Color, VariationFunctions } from '@/utils/FractalFlameAlgorithm'
+import { getNewImageData } from '@/utils/Helper'
 import { testFlameInEditor, testUser, testHomeCarouselImages, testArtworks } from './testData'
 
 export interface IFlameInEditor {
@@ -39,7 +40,8 @@ export interface IArtwork {
   canvasHeight: number
 }
 export interface IStoreState {
-  isLogin: boolean
+  isLogin: boolean,
+  isInEditor: boolean
   user?: IUser
   flameInEditor?: IFlameInEditor
   homeCarouselImages?: string[]
@@ -51,6 +53,7 @@ export const key: InjectionKey<Store<IStoreState>> = Symbol('key')
 export const store = createStore<IStoreState>({
   state: {
     isLogin: true,
+    isInEditor: false,
     user: testUser,
     flameInEditor: testFlameInEditor,
     homeCarouselImages: testHomeCarouselImages,
@@ -59,6 +62,53 @@ export const store = createStore<IStoreState>({
   mutations: {
     updateFlameInEditor (state, payload: IFlameInEditor) {
       state.flameInEditor = payload
+    },
+    createNewFlameInEditor (state) {
+      state.flameInEditor = {
+        artworkID: '',
+        userID: state.user ? state.user.userID : '',
+        title: '新建焰火',
+        createdAt: Date.now(),
+        lastUpdatedAt: Date.now(),
+        attractors: [
+          new Attractor(
+            false,
+            [0.5, 0, 0, 0, 0.5, -Math.sqrt(3) / 6],
+            0.33,
+            new Color(false, 255, 0, 0),
+            [0],
+            VariationFunctions
+          ),
+          new Attractor(
+            false,
+            [0.5, 0, 0.25, 0, 0.5, Math.sqrt(3) / 12],
+            0.33,
+            new Color(false, 0, 255, 0),
+            [0],
+            VariationFunctions
+          ),
+          new Attractor(
+            false,
+            [0.5, 0, -0.25, 0, 0.5, Math.sqrt(3) / 12],
+            0.34,
+            new Color(false, 0, 0, 255),
+            [0],
+            VariationFunctions
+          )
+        ],
+        canvasWidth: 640,
+        canvasHeight: 640,
+        gamma: 2.2,
+        imageData: getNewImageData(640, 640),
+        histogramData: new Uint32Array(640 * 640 * 4),
+        drawPoint: new Point(true),
+        maxFrequency: 0,
+        pointsCalculated: 0,
+        pointsRendered: 0
+      }
+    },
+    setIsInEditor (state, isInEditor: boolean) {
+      state.isInEditor = isInEditor
     }
   }
 })

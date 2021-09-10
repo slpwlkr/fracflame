@@ -68,7 +68,8 @@ import {
   Home as HomeIcon,
   Search as BrowseIcon,
   Folder as ArtworkIcon,
-  Bookmark as BookmarkIcon
+  Bookmark as BookmarkIcon,
+  DraftingCompass as CreateIcon
 } from '@vicons/fa'
 import { key } from '@/store'
 import SiderTitle from '@/components/SiderTitle.vue'
@@ -91,6 +92,11 @@ const menuOptionsIsLogin = [
     label: '浏览',
     key: 'browse',
     icon: renderIcon(BrowseIcon)
+  },
+  {
+    label: '新建作品',
+    key: 'create',
+    icon: renderIcon(CreateIcon)
   },
   {
     label: '我的作品',
@@ -120,15 +126,24 @@ function onMenuUpdate (key: string) {
   let routerLink = '/'
   switch (key) {
   case 'home':
+    store.commit('setIsInEditor', false)
     routerLink = '/'
     break
   case 'browse':
+    store.commit('setIsInEditor', false)
     routerLink = '/artworks'
     break
+  case 'create':
+    store.commit('createNewFlameInEditor')
+    store.commit('setIsInEditor', true)
+    routerLink = '/flame'
+    break
   case 'my-artworks':
+    store.commit('setIsInEditor', false)
     routerLink = '/my-artworks'
     break
   case 'my-bookmarks':
+    store.commit('setIsInEditor', false)
     routerLink = '/my-bookmarks'
     break
   }

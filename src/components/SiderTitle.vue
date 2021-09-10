@@ -6,7 +6,7 @@
       size="large"
       round
       text
-      @click="router.push(routerLink)"
+      @click="onClickLogo"
     >
       <template #icon>
         <n-icon
@@ -28,6 +28,8 @@
 import { NIcon, NButton, NSpace, NH2 } from 'naive-ui'
 import { Gripfire } from '@vicons/fa'
 import { useRouter } from 'vue-router'
+import { useStore } from 'vuex'
+import { key } from '@/store'
 
 const props = defineProps({
   routerLink: {
@@ -36,7 +38,14 @@ const props = defineProps({
   }
 })
 
+const store = useStore(key)
+
 const router = useRouter()
+
+function onClickLogo () {
+  store.commit('setIsInEditor', false)
+  router.push(props.routerLink)
+}
 
 </script>
 

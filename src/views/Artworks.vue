@@ -31,6 +31,7 @@ const store = useStore(key)
 const artworks = computed(() => {
   return store.state.artworks
 })
+store.commit('setIsInEditor', false)
 
 </script>
 

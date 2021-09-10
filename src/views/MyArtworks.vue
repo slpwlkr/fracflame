@@ -28,6 +28,8 @@ import { key } from '@/store'
 import ArtworkCard from '@/components/ArtworkCard.vue'
 
 const store = useStore(key)
+store.commit('setIsInEditor', false)
+
 const artworks = computed(() => {
   return store.state.artworks
 })

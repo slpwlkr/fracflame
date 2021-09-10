@@ -83,4 +83,21 @@ function getImageURL (name: string): string {
   return require(`@/assets/${name}`)
 }
 
-export { randomInRange, toPercentageString, toFixedNumber, normalizeArray, randomWeightedPick, randomPermutation, toCNDatetimeString, getImageURL }
+function getNewImageData (width: number, height: number): ImageData {
+  const imageData = new ImageData(width, height)
+  for (let i = 3; i < width * height; i += 4) {
+    imageData.data[i] = 255
+  }
+  return imageData
+}
+export {
+  randomInRange,
+  toPercentageString,
+  toFixedNumber,
+  normalizeArray,
+  randomWeightedPick,
+  randomPermutation,
+  toCNDatetimeString,
+  getImageURL,
+  getNewImageData
+}
