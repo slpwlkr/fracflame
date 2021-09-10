@@ -74,7 +74,7 @@ export const testArtworks: IArtwork[] = [
     imageURL: 'default_flame_1.png',
     createdAt: Date.now(),
     lastUpdatedAt: Date.now(),
-    canvasWidth: 800,
+    canvasWidth: 600,
     canvasHeight: 600
   },
   {

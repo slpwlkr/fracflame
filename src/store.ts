@@ -52,7 +52,7 @@ export const key: InjectionKey<Store<IStoreState>> = Symbol('key')
 
 export const store = createStore<IStoreState>({
   state: {
-    isLogin: true,
+    isLogin: false,
     isInEditor: false,
     user: testUser,
     flameInEditor: testFlameInEditor,
@@ -109,6 +109,14 @@ export const store = createStore<IStoreState>({
     },
     setIsInEditor (state, isInEditor: boolean) {
       state.isInEditor = isInEditor
+    },
+    login (state, user: IUser) {
+      state.user = user
+      state.isLogin = true
+    },
+    logout (state) {
+      state.user = undefined
+      state.isLogin = false
     }
   }
 })

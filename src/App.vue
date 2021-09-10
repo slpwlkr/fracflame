@@ -13,7 +13,7 @@
           id="sider"
           bordered
           content-style="padding: 24px"
-          width="240px"
+          width="280px"
           collapse-mode="transform"
           :collapsed-width="0"
           show-trigger="bar"

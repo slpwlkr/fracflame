@@ -14,6 +14,7 @@
       <artwork-card
         :artwork="artworks ? artworks[index] : undefined"
         :is-my-artwork="false"
+        :is-login="isLogin"
       />
     </n-gi>
   </n-grid>
@@ -30,6 +31,9 @@ import ArtworkCard from '@/components/ArtworkCard.vue'
 const store = useStore(key)
 const artworks = computed(() => {
   return store.state.artworks
+})
+const isLogin = computed(() => {
+  return store.state.isLogin
 })
 store.commit('setIsInEditor', false)
 
