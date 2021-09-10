@@ -1,7 +1,7 @@
 import { InjectionKey } from 'vue'
 import { createStore, Store } from 'vuex'
 import { Attractor, Point } from '@/utils/FractalFlameAlgorithm'
-import { testFlameInEditor, testUser, testHomeCarouselImages } from './testData'
+import { testFlameInEditor, testUser, testHomeCarouselImages, testArtworks } from './testData'
 
 export interface IFlameInEditor {
   artworkID: string
@@ -27,11 +27,23 @@ export interface IUser {
   avatar?: string
 }
 
+export interface IArtwork {
+  artworkID: string,
+  userID: string,
+  title: string,
+  username: string,
+  imageURL: string,
+  createdAt: number,
+  lastUpdatedAt: number,
+  canvasWidth: number,
+  canvasHeight: number
+}
 export interface IStoreState {
   isLogin: boolean
   user?: IUser
   flameInEditor?: IFlameInEditor
   homeCarouselImages?: string[]
+  artworks?: IArtwork[]
 }
 
 export const key: InjectionKey<Store<IStoreState>> = Symbol('key')
@@ -41,7 +53,8 @@ export const store = createStore<IStoreState>({
     isLogin: true,
     user: testUser,
     flameInEditor: testFlameInEditor,
-    homeCarouselImages: testHomeCarouselImages
+    homeCarouselImages: testHomeCarouselImages,
+    artworks: testArtworks
   },
   mutations: {
     updateFlameInEditor (state, payload: IFlameInEditor) {

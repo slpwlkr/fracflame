@@ -1,5 +1,5 @@
 import { Attractor, Color, Point, VariationFunctions } from '@/utils/FractalFlameAlgorithm'
-import { IFlameInEditor, IUser } from './store'
+import { IFlameInEditor, IUser, IArtwork } from './store'
 
 const testAttractors1: Attractor[] = [
   new Attractor(
@@ -63,4 +63,40 @@ export const testHomeCarouselImages = [
   'default_flame_1.png',
   'default_flame_2.png',
   'default_flame_3.png'
+]
+
+export const testArtworks: IArtwork[] = [
+  {
+    artworkID: '1',
+    userID: '1',
+    title: 'test flame 1',
+    username: 'testUser 1',
+    imageURL: 'default_flame_1.png',
+    createdAt: Date.now(),
+    lastUpdatedAt: Date.now(),
+    canvasWidth: 800,
+    canvasHeight: 600
+  },
+  {
+    artworkID: '2',
+    userID: '2',
+    title: 'test flame 2',
+    username: 'testUser 2',
+    imageURL: 'default_flame_2.png',
+    createdAt: Date.now(),
+    lastUpdatedAt: Date.now(),
+    canvasWidth: 800,
+    canvasHeight: 600
+  },
+  {
+    artworkID: '3',
+    userID: '3',
+    title: 'test flame 3',
+    username: 'testUser 3',
+    imageURL: 'default_flame_3.png',
+    createdAt: Date.now(),
+    lastUpdatedAt: Date.now(),
+    canvasWidth: 800,
+    canvasHeight: 600
+  }
 ]
