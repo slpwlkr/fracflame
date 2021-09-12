@@ -212,7 +212,8 @@ import { useRouter } from 'vue-router'
 import {
   NGrid, NGi, NButton, NModal, NCard, NSpace,
   NForm, NFormItem, NInput,
-  NDivider, NAvatar, NIcon, NMenu
+  NDivider, NAvatar, NIcon, NMenu,
+  useMessage
 } from 'naive-ui'
 import {
   UserCircle as UserIcon,
@@ -327,16 +328,27 @@ const inputLoginFormRules = {
   }
 }
 
+const message = useMessage()
+
 function onLogin () {
   const { username, password } = inputLoginFormValue.value
   if (username && password) {
     // TODO:验证获取
     // axios .post .then .catch
 
-    axios.post('http://localhost:3000/auth/login', inputLoginFormValue.value).then((response) => {
-      console.log(response.data)
-      store.commit('login', response.data)
+    const payload = {
+      username: username,
+      password: password
+    }
+
+    store.dispatch('loginAndFetch', payload).then(response => {
+      console.log(response)
+      message.success('登录成功，欢迎回来')
     })
+      .catch(function (error) {
+        console.log(error)
+        message.error('登录失败，账号或密码错误')
+      })
     inputShouldShowLoginModal.value = false
   }
 }

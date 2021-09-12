@@ -27,7 +27,6 @@ export interface IUser {
   userID: string,
   username: string,
   avatar?: string
-  token?: string
 }
 
 export interface IArtwork {
@@ -42,7 +41,8 @@ export interface IArtwork {
   canvasHeight: number
 }
 export interface IStoreState {
-  isLogin: boolean,
+  token: string
+  isLogin: boolean
   isInEditor: boolean
   user?: IUser
   flameInEditor?: IFlameInEditor
@@ -54,6 +54,7 @@ export const key: InjectionKey<Store<IStoreState>> = Symbol('key')
 
 export const store = createStore<IStoreState>({
   state: {
+    token: '',
     isLogin: false,
     isInEditor: false,
     user: testUser,
@@ -112,9 +113,14 @@ export const store = createStore<IStoreState>({
     setIsInEditor (state, isInEditor: boolean) {
       state.isInEditor = isInEditor
     },
-    login (state, user: IUser) {
-      state.user = user
+    login (state, rawData) {
+      const { token } = rawData.access_token
+      state.token = token
+      axios.defaults.headers.common.Authorization = `Bearer ${token}`
       state.isLogin = true
+    },
+    fetchCurrentUser (state, rawData) {
+      state.user = { ...rawData.data }
     },
     logout (state) {
       state.user = undefined
@@ -122,6 +128,17 @@ export const store = createStore<IStoreState>({
     }
   },
   actions: {
+    fetchCurrentUser ({ commit }) {
+      return getAndCommit('/user/current', 'fetchCurrentUser', commit)
+    },
+    login ({ commit }, payload) {
+      return postAndCommit('/auth/login', 'login', commit, payload)
+    },
+    loginAndFetch ({ dispatch }, loginData) {
+      return dispatch('login', loginData).then(() => {
+        return dispatch('fetchCurrentUser')
+      })
+    }
   }
 })
 
@@ -133,4 +150,5 @@ const getAndCommit = async (url: string, mutationName: string, commit: Commit) =
 const postAndCommit = async (url: string, mutationName: string, commit: Commit, payload: any) => {
   const { data } = await axios.post(url, payload)
   commit(mutationName, data)
+  return data
 }
