@@ -2,7 +2,7 @@
   <sider-title router-link="/" />
   <n-divider />
   <div v-if="isLogin">
-    <n-space justify="center">
+    <n-space vertical align="center">
       <n-button
         size="large"
         round
@@ -21,6 +21,12 @@
           </n-icon>
         </n-avatar>
       </n-button>
+      <n-menu
+        :options="userMenuOptions"
+        :indent="12"
+        :root-indent="24"
+        @update:value="(key) => { onUserMenuUpdate(key) }"
+      />
     </n-space>
   </div>
   <div v-else>
@@ -202,6 +208,10 @@
       </n-button>
     </n-card>
   </n-modal>
+  <n-modal
+    v-model:show="inputShouldShowUserInfo">
+    这里是我的信息表单内容
+  </n-modal>
 </template>
 
 <script lang="ts" setup>
@@ -232,6 +242,49 @@ const store = useStore(key)
 const router = useRouter()
 const isLogin = computed(() => store.state.isLogin)
 const user = computed(() => store.state.user)
+
+const userMenuOptions = [
+  {
+    label: `${user.value.username}`,
+    key: 'user',
+    children: [
+      {
+        label: '我的资料',
+        key: 'aboutMe'
+      },
+      {
+        label: '修改信息',
+        key: 'editFile'
+      },
+      {
+        label: '登出',
+        key: 'logout'
+      },
+      {
+        label: '注销账户',
+        key: 'removeAccount'
+      }
+    ]
+  }
+]
+
+function onUserMenuUpdate (key: string) {
+  switch (key) {
+  case 'aboutMe':
+    // 显示个人信息
+    break
+  case 'editFile':
+    // 修改个人信息
+    break
+  case 'logout':
+    store.commit('logout')
+    router.push('/')
+    break
+  case 'removeAccount':
+    store.dispatch('removeAccount')
+    break
+  }
+}
 
 const menuOptions = computed(() => {
   return isLogin.value ? menuOptionsIsLogin : menuOptionsNotLogin
@@ -338,7 +391,7 @@ function onLogin () {
       password: password
     }
 
-    store.dispatch('loginAndFetch', payload).then(response => {
+    store.dispatch('login', payload).then(response => {
       console.log(response)
       message.success('登录成功，欢迎回来')
     })
@@ -397,11 +450,8 @@ const inputRegisterFormRules = {
 function isValid (str) { return /^\w+$/.test(str) }
 
 function onRegister () {
-  const { username, password, passwordRepeat } = inputRegisterFormRef.value
-  const Req = {}
-  Req.username = username
-  Req.password = password
-  store.dispatch('Register', Req).then(response => {
+  const { username, password, passwordRepeat } = inputRegisterFormValue.value
+  store.dispatch('register', { username, password }).then(response => {
     console.log(response)
   })
     .catch(function (error) {

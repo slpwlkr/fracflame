@@ -54,8 +54,15 @@ const token = computed(() => store.state.token)
 onMounted(() => {
   if (!store.state.isLogin && token.value) {
     axios.defaults.headers.common.Authorization = `Bearer ${token.value}`
-    store.dispatch('fetchCurrentUser')
+    /* store.dispatch('fetchCurrentUser').then(response => {
+      console.log(token.value)
+      console.log(response.data)
+    })
+      .catch(function (error) {
+        console.log(error)
+      })
     // 这里需要后端配合了
+    */
   }
 })
 

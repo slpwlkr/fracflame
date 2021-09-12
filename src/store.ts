@@ -126,6 +126,7 @@ export const store = createStore<IStoreState>({
     logout (state) {
       state.user = undefined
       state.isLogin = false
+      state.token = ''
     }
   },
   actions: {
@@ -140,10 +141,23 @@ export const store = createStore<IStoreState>({
         return dispatch('fetchCurrentUser')
       })
     },
-    Register ({ commit }, payload) {
+    register ({ commit }, payload) {
+      console.log(payload)
       axios.post('/auth/register', payload).then((response) => {
         console.log(response)
       })
+        .catch(function (error) {
+          console.log(error)
+        })
+    },
+    removeAccount ({ commit }, payload) {
+      console.log(payload)
+      axios.post('auth/delete', payload).then((response) => {
+        console.log(response)
+      })
+        .catch(function (error) {
+          console.log(error)
+        })
     }
   }
 })
