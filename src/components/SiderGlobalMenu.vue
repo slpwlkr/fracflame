@@ -125,6 +125,7 @@
             v-model:value="inputRegisterFormValue.username"
             placeholder="请输入用户名"
             :maxlength="64"
+            show-count
           />
         </n-form-item>
         <n-form-item
@@ -140,7 +141,7 @@
           />
         </n-form-item>
         <n-form-item
-          label="密码"
+          label="再次输入密码"
           path="passwordRepeat"
         >
           <n-input
@@ -152,7 +153,7 @@
           />
         </n-form-item>
       </n-form>
-      <n-button class="modal-button">
+      <n-button class="modal-button" @click="onRegister">
         注册
       </n-button>
     </n-card>
@@ -326,6 +327,8 @@ const inputLoginFormRules = {
 function onLogin () {
   const { username, password } = inputLoginFormValue.value
   if (username && password) {
+    // TODO:验证获取
+    // axios .post .then .catch
     const loginUser: IUser = {
       userID: '1',
       username: username
@@ -346,8 +349,14 @@ const inputRegisterFormRules = {
   username: [
     {
       required: true,
-      message: '请输入用户名',
-      trigger: 'blur'
+      validator (rule, value, callback) {
+        if (!value) {
+          return new Error('请输入用户名')
+        } else if (!/^\w+$/.test(value)) {
+          return new Error('用户名非法')
+        } else return true
+      },
+      trigger: ['input', 'blur']
     }
   ],
   password: [
@@ -371,6 +380,22 @@ const inputRegisterFormRules = {
       trigger: 'blur'
     }
   ]
+}
+
+function isValid (str) { return /^\w+$/.test(str) }
+
+function onRegister () {
+  const { username, password, passwordRepeat } = inputRegisterFormRef.value
+  if (!isValid(username)) {
+    console.log('用户名非法')
+  } else if (!isValid(password)) {
+    console.log('密码非法')
+  } else if (passwordRepeat !== password) {
+    console.log('两次输入不一致')
+  } else {
+    // 提交表单
+    // axios .post .then .catch
+  }
 }
 
 const inputShouldShowUserMenuModal = ref(false)
