@@ -73,6 +73,7 @@
         <n-gi :span="12">
           <n-button
             class="modal-button"
+            @click="onDeleteArtwork"
           >
             删除作品
           </n-button>
@@ -135,6 +136,11 @@ const inputShouldShowArtworkModal = ref(false)
 
 function onOpenArtwork () {
   router.push('/flame')
+  // TODO:push的时候传入该作品参数
+}
+
+function onDeleteArtwork () {
+  console.log('准备删除某个作品')
 }
 
 </script>

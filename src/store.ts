@@ -1,8 +1,9 @@
 import { InjectionKey } from 'vue'
-import { createStore, Store } from 'vuex'
+import { createStore, Store, Commit } from 'vuex'
 import { Attractor, Point, Color, VariationFunctions } from '@/utils/FractalFlameAlgorithm'
 import { getNewImageData } from '@/utils/Helper'
 import { testFlameInEditor, testUser, testHomeCarouselImages, testArtworks } from './testData'
+import axios from 'axios'
 
 export interface IFlameInEditor {
   artworkID: string
@@ -26,6 +27,7 @@ export interface IUser {
   userID: string,
   username: string,
   avatar?: string
+  token?: string
 }
 
 export interface IArtwork {
@@ -118,5 +120,17 @@ export const store = createStore<IStoreState>({
       state.user = undefined
       state.isLogin = false
     }
+  },
+  actions: {
   }
 })
+
+const getAndCommit = async (url: string, mutationName: string, commit: Commit) => {
+  const { data } = await axios.get(url)
+  commit(mutationName, data)
+}
+
+const postAndCommit = async (url: string, mutationName: string, commit: Commit, payload: any) => {
+  const { data } = await axios.post(url, payload)
+  commit(mutationName, data)
+}

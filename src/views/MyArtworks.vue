@@ -21,11 +21,13 @@
 
 <script lang="ts" setup>
 
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useStore } from 'vuex'
 import { NH1, NGrid, NGi } from 'naive-ui'
 import { key } from '@/store'
 import ArtworkCard from '@/components/ArtworkCard.vue'
+
+// TODO:获取数据
 
 const store = useStore(key)
 store.commit('setIsInEditor', false)
@@ -34,6 +36,9 @@ const artworks = computed(() => {
   return store.state.artworks
 })
 
+onMounted(() => {
+  store.dispatch('fetchMyArtworks')
+})
 </script>
 
 <style scoped>
