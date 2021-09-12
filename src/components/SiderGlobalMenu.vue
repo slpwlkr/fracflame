@@ -153,7 +153,9 @@
           />
         </n-form-item>
       </n-form>
-      <n-button class="modal-button" @click="onRegister">
+      <n-button
+        class="modal-button"
+        @click="onRegister">
         注册
       </n-button>
     </n-card>
@@ -223,6 +225,7 @@ import {
 import { key, IUser } from '@/store'
 import { getImageURL } from '@/utils/Helper'
 import SiderTitle from '@/components/SiderTitle.vue'
+import axios from 'axios'
 
 const store = useStore(key)
 const router = useRouter()
@@ -329,11 +332,11 @@ function onLogin () {
   if (username && password) {
     // TODO:验证获取
     // axios .post .then .catch
-    const loginUser: IUser = {
-      userID: '1',
-      username: username
-    }
-    store.commit('login', loginUser)
+
+    axios.post('http://localhost:3000/auth/login', inputLoginFormValue.value).then((response) => {
+      console.log(response.data)
+      store.commit('login', response.data)
+    })
     inputShouldShowLoginModal.value = false
   }
 }
@@ -393,8 +396,12 @@ function onRegister () {
   } else if (passwordRepeat !== password) {
     console.log('两次输入不一致')
   } else {
-    // 提交表单
-    // axios .post .then .catch
+    const Req = {}
+    Req.username = this.username
+    Req.password = this.password
+    axios.post('localhost:3000', Req).then((response) => {
+      console.log(response.data)
+    })
   }
 }
 

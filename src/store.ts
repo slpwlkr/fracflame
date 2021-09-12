@@ -3,6 +3,7 @@ import { createStore, Store } from 'vuex'
 import { Attractor, Point, Color, VariationFunctions } from '@/utils/FractalFlameAlgorithm'
 import { getNewImageData } from '@/utils/Helper'
 import { testFlameInEditor, testUser, testHomeCarouselImages, testArtworks } from './testData'
+import axios from 'axios'
 
 export interface IFlameInEditor {
   artworkID: string

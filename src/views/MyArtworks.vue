@@ -21,7 +21,7 @@
 
 <script lang="ts" setup>
 
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useStore } from 'vuex'
 import { NH1, NGrid, NGi } from 'naive-ui'
 import { key } from '@/store'
@@ -36,6 +36,9 @@ const artworks = computed(() => {
   return store.state.artworks
 })
 
+onMounted(() => {
+  store.dispatch('fetchMyArtworks')
+})
 </script>
 
 <style scoped>
