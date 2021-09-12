@@ -2,6 +2,7 @@
   <n-grid
     :cols="24"
   >
+    <n-gi :span="24"> <div class="space"></div> </n-gi>
     <n-gi :span="12">
       <n-icon
         color="white"
@@ -24,7 +25,11 @@
       </p>
     </n-gi>
     <n-gi :span="12">
-      编辑精选
+      <n-h1 prefix="bar">
+        <n-text>
+          编辑精选
+        </n-text>
+      </n-h1>
       <n-carousel
         autoplay
         show-arrow
@@ -46,7 +51,7 @@ import { computed, ref } from 'vue'
 import { useStore } from 'vuex'
 import {
   NGrid, NGi, NSpace,
-  NText, NGradientText, NIcon, NDivider, NCarousel
+  NText, NGradientText, NIcon, NDivider, NCarousel, NH1
 } from 'naive-ui'
 import { Gripfire } from '@vicons/fa'
 import { key } from '@/store'
@@ -72,5 +77,8 @@ const carouselImages = computed(() => {
   width: 100%;
   height: 480px;
   object-fit: contain;
+}
+.space {
+  height: 220px;
 }
 </style>

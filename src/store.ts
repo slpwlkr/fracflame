@@ -54,7 +54,7 @@ export const key: InjectionKey<Store<IStoreState>> = Symbol('key')
 
 export const store = createStore<IStoreState>({
   state: {
-    token: '',
+    token: localStorage.getItem('token') || '',
     isLogin: false,
     isInEditor: false,
     user: testUser,
@@ -116,6 +116,7 @@ export const store = createStore<IStoreState>({
     login (state, rawData) {
       const { token } = rawData.access_token
       state.token = token
+      localStorage.setItem('token', token)
       axios.defaults.headers.common.Authorization = `Bearer ${token}`
       state.isLogin = true
     },
@@ -128,8 +129,8 @@ export const store = createStore<IStoreState>({
     }
   },
   actions: {
-    fetchCurrentUser ({ commit }) {
-      return getAndCommit('/user/current', 'fetchCurrentUser', commit)
+    fetchCurrentUser ({ commit }, userID) {
+      return getAndCommit(`/user/${userID}`, 'fetchCurrentUser', commit)
     },
     login ({ commit }, payload) {
       return postAndCommit('/auth/login', 'login', commit, payload)
@@ -137,6 +138,11 @@ export const store = createStore<IStoreState>({
     loginAndFetch ({ dispatch }, loginData) {
       return dispatch('login', loginData).then(() => {
         return dispatch('fetchCurrentUser')
+      })
+    },
+    Register ({ commit }, payload) {
+      axios.post('/auth/register', payload).then((response) => {
+        console.log(response)
       })
     }
   }

@@ -39,15 +39,24 @@ import {
   NConfigProvider, darkTheme, NMessageProvider,
   NLayout, NLayoutContent, NLayoutSider
 } from 'naive-ui'
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useStore } from 'vuex'
 import { key } from '@/store'
 import { themeOverrides } from './utils/Constants'
 import SiderGlobalMenu from './components/SiderGlobalMenu.vue'
+import axios from 'axios'
 
 const store = useStore(key)
 const isInEditor = computed(() => {
   return store.state.isInEditor
+})
+const token = computed(() => store.state.token)
+onMounted(() => {
+  if (!store.state.isLogin && token.value) {
+    axios.defaults.headers.common.Authorization = `Bearer ${token.value}`
+    store.dispatch('fetchCurrentUser')
+    // 这里需要后端配合了
+  }
 })
 
 </script>

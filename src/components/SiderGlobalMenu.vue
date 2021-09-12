@@ -333,9 +333,6 @@ const message = useMessage()
 function onLogin () {
   const { username, password } = inputLoginFormValue.value
   if (username && password) {
-    // TODO:验证获取
-    // axios .post .then .catch
-
     const payload = {
       username: username,
       password: password
@@ -401,20 +398,15 @@ function isValid (str) { return /^\w+$/.test(str) }
 
 function onRegister () {
   const { username, password, passwordRepeat } = inputRegisterFormRef.value
-  if (!isValid(username)) {
-    console.log('用户名非法')
-  } else if (!isValid(password)) {
-    console.log('密码非法')
-  } else if (passwordRepeat !== password) {
-    console.log('两次输入不一致')
-  } else {
-    const Req = {}
-    Req.username = this.username
-    Req.password = this.password
-    axios.post('localhost:3000', Req).then((response) => {
-      console.log(response.data)
+  const Req = {}
+  Req.username = username
+  Req.password = password
+  store.dispatch('Register', Req).then(response => {
+    console.log(response)
+  })
+    .catch(function (error) {
+      console.log(error)
     })
-  }
 }
 
 const inputShouldShowUserMenuModal = ref(false)
