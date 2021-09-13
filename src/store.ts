@@ -2,7 +2,7 @@ import { InjectionKey } from 'vue'
 import { createStore, Store, Commit } from 'vuex'
 import { Attractor, Point, Color, VariationFunctions } from '@/utils/FractalFlameAlgorithm'
 import { getNewImageData } from '@/utils/Helper'
-import { testFlameInEditor, testUser, testHomeCarouselImages, testArtworks } from './testData'
+import { testFlameInEditor, testHomeCarouselImages, testArtworks } from './testData'
 import axios from 'axios'
 
 export interface IFlameInEditor {
@@ -194,7 +194,7 @@ const getAndCommit = async (url: string, mutationName: string, commit: Commit) =
   commit(mutationName, data)
 }
 
-const postAndCommit = async (url: string, mutationName: string, commit: Commit, payload: any) => {
+const postAndCommit = async (url: string, mutationName: string, commit: Commit, payload: unknown) => {
   axios.defaults.headers.common.Authorization = `Bearer ${store.state.token}`
   const { data } = await axios.post(url, payload)
   commit(mutationName, data)
