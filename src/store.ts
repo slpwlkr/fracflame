@@ -24,7 +24,7 @@ export interface IFlameInEditor {
 }
 
 export interface IUser {
-  userID: string,
+  userid: string,
   username: string,
   avatar?: string
 }
@@ -68,7 +68,7 @@ export const store = createStore<IStoreState>({
     createNewFlameInEditor (state) {
       state.flameInEditor = {
         artworkID: '',
-        userID: state.user ? state.user.userID : '',
+        userID: state.user ? state.user.userid : '',
         title: '新建焰火',
         createdAt: Date.now(),
         lastUpdatedAt: Date.now(),
@@ -116,7 +116,7 @@ export const store = createStore<IStoreState>({
       const token = rawData.access_token
       const userid = rawData.userid
       const userName = rawData.username
-      const currentUser : IUser = { userID: userid, username: userName }
+      const currentUser : IUser = { userid: userid, username: userName }
       state.user = currentUser
       state.token = token
       console.log(`currentUser is ${state.user.username}`)
@@ -126,17 +126,20 @@ export const store = createStore<IStoreState>({
       state.isLogin = true
     },
     fetchCurrentUser (state, rawData) {
-      state.user = { ...rawData.data }
+      state.user = { ...rawData }
+      state.isLogin = true
     },
     logout (state) {
       state.user = undefined
       state.isLogin = false
       state.token = ''
+      localStorage.removeItem('token')
     }
   },
   actions: {
-    fetchCurrentUser ({ commit }, userID) {
-      return getAndCommit(`/user/${userID}`, 'fetchCurrentUser', commit)
+    fetchCurrentUser ({ commit }) {
+      console.log('fetching')
+      return getAndCommit('/users/current', 'fetchCurrentUser', commit)
     },
     login ({ commit }, payload) {
       return postAndCommit('/auth/login', 'login', commit, payload)
@@ -175,7 +178,7 @@ export const store = createStore<IStoreState>({
     },
     removeAccount ({ commit }, payload) {
       console.log(payload)
-      axios.post('auth/delete', payload).then((response) => {
+      axios.delete(`/users/${payload}`).then((response) => {
         console.log(response)
       })
         .catch(function (error) {
@@ -186,11 +189,13 @@ export const store = createStore<IStoreState>({
 })
 
 const getAndCommit = async (url: string, mutationName: string, commit: Commit) => {
+  axios.defaults.headers.common.Authorization = `Bearer ${store.state.token}`
   const { data } = await axios.get(url)
   commit(mutationName, data)
 }
 
 const postAndCommit = async (url: string, mutationName: string, commit: Commit, payload: any) => {
+  axios.defaults.headers.common.Authorization = `Bearer ${store.state.token}`
   const { data } = await axios.post(url, payload)
   commit(mutationName, data)
   return data

@@ -208,15 +208,11 @@
       </n-button>
     </n-card>
   </n-modal>
-  <n-modal
-    v-model:show="inputShouldShowUserInfo">
-    这里是我的信息表单内容
-  </n-modal>
 </template>
 
 <script lang="ts" setup>
 
-import { computed, h, ref } from 'vue'
+import { computed, h, ref, onMounted } from 'vue'
 import { useStore } from 'vuex'
 import { useRouter } from 'vue-router'
 import {
@@ -245,7 +241,7 @@ const user = computed(() => store.state.user)
 
 const userMenuOptions = [
   {
-    label: user.value.username,
+    label: () => user.value?.username,
     key: 'user',
     children: [
       {
@@ -276,12 +272,20 @@ function onUserMenuUpdate (key: string) {
   case 'editFile':
     // 修改个人信息
     break
-  case 'logout':
+  case 'removeAccount':
+    console.log('begin deleting')
+    console.log('id is ' + store.state.user?.userid)
+    try {
+      store.dispatch('removeAccount', store.state.user?.userid)
+    } catch (e) {
+      console.log(e)
+    }
     store.commit('logout')
     router.push('/')
     break
-  case 'removeAccount':
-    store.dispatch('removeAccount')
+  case 'logout':
+    store.commit('logout')
+    router.push('/')
     break
   }
 }
@@ -468,6 +472,13 @@ function onLogout () {
   store.commit('logout')
   inputShouldShowUserMenuModal.value = false
 }
+
+onMounted(() => {
+  if (localStorage.getItem('token')) {
+    console.log(`currentToken is ${store.state.token}`)
+    store.dispatch('fetchCurrentUser')
+  }
+})
 
 </script>
 
