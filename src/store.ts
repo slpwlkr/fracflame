@@ -2,7 +2,7 @@ import { InjectionKey } from 'vue'
 import { createStore, Store, Commit } from 'vuex'
 import { Attractor, Point, Color, VariationFunctions } from '@/utils/FractalFlameAlgorithm'
 import { getNewImageData } from '@/utils/Helper'
-import { testFlameInEditor, testHomeCarouselImages, testArtworks } from './testData'
+import { testHomeCarouselImages, testArtworks } from './testData'
 import axios from 'axios'
 
 export interface IFlameInEditor {
@@ -57,12 +57,56 @@ export const store = createStore<IStoreState>({
     token: localStorage.getItem('token') || '',
     isLogin: false,
     isInEditor: false,
-    flameInEditor: testFlameInEditor,
+    flameInEditor: undefined,
     homeCarouselImages: testHomeCarouselImages,
-    artworks: testArtworks
+    artworks: []
   },
   mutations: {
-    updateFlameInEditor (state, payload: IFlameInEditor) {
+    updateFlameInEditor (state, data) {
+      console.log(data)
+      const payload : IFlameInEditor = {
+        artworkID: data.artworkid,
+        userID: data.user.userid,
+        title: data.title,
+        createdAt: data.created_at,
+        lastUpdatedAt: data.lastUpdated_at,
+        attractors: [
+          new Attractor(
+            false,
+            [0.5, 0, 0, 0, 0.5, -Math.sqrt(3) / 6],
+            0.33,
+            new Color(false, 255, 0, 0),
+            [0],
+            VariationFunctions
+          ),
+          new Attractor(
+            false,
+            [0.5, 0, 0.25, 0, 0.5, Math.sqrt(3) / 12],
+            0.33,
+            new Color(false, 0, 255, 0),
+            [0],
+            VariationFunctions
+          ),
+          new Attractor(
+            false,
+            [0.5, 0, -0.25, 0, 0.5, Math.sqrt(3) / 12],
+            0.34,
+            new Color(false, 0, 0, 255),
+            [0],
+            VariationFunctions
+          )
+        ],
+        canvasWidth: data.canvas_width,
+        canvasHeight: data.canvas_height,
+        gamma: 2.2,
+        imageData: getNewImageData(data.canvas_width, data.canvas_height),
+        histogramData: new Uint32Array(data.canvas_width * data.canvas_height * 4),
+        drawPoint: new Point(true),
+        maxFrequency: 0,
+        pointsCalculated: 0,
+        pointsRendered: 0
+      }
+      console.log(payload)
       state.flameInEditor = payload
     },
     createNewFlameInEditor (state) {
@@ -134,9 +178,52 @@ export const store = createStore<IStoreState>({
       state.isLogin = false
       state.token = ''
       localStorage.removeItem('token')
+    },
+    fetchArtworks (state, rawData) {
+      state.artworks = []
+      const tempArt: IArtwork[] = []
+      for (let i = 0; rawData[i]; i++) {
+        const tempWork: IArtwork = {
+          artworkID: '',
+          title: '',
+          userID: '',
+          username: '',
+          canvasWidth: 0,
+          canvasHeight: 0,
+          imageURL: '',
+          createdAt: 0,
+          lastUpdatedAt: 0
+        }
+        console.log(`${rawData[i].artworkid}`)
+        tempWork.artworkID = `${rawData[i].artworkid}`
+        tempWork.title = `${rawData[i].title}`
+        tempWork.userID = `${rawData[i].user.userid}`
+        tempWork.username = `${rawData[i].user.username}`
+        tempWork.canvasWidth = rawData[i].canvas_width
+        tempWork.canvasHeight = rawData[i].canvas_height
+        tempWork.createdAt = rawData[i].created_at
+        tempWork.lastUpdatedAt = rawData[i].last_updated_at
+        tempWork.imageURL = 'fracflame_default.jpg'
+        tempArt.push(tempWork)
+      }
+      for (let i = 0; tempArt[i]; i++) {
+        state.artworks.push(tempArt[i])
+      }
+      console.log(state.artworks)
     }
   },
   actions: {
+    fetchArtworkDataAndOpen ({ commit }, artworkId) {
+      console.log('fetching art data')
+      return getAndCommit(`/artwork/${artworkId}`, 'updateFlameInEditor', commit)
+    },
+    fetchArtworks ({ commit }) {
+      console.log('fetching arts')
+      return getAndCommit('/artwork', 'fetchArtworks', commit)
+    },
+    fetchMyArtworks ({ commit }) {
+      return getAndCommit('/artwork/my', 'fetchArtworks', commit)
+    },
     fetchCurrentUser ({ commit }) {
       console.log('fetching')
       return getAndCommit('/users/current', 'fetchCurrentUser', commit)

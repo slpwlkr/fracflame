@@ -204,7 +204,7 @@
             {{ user.username }}
           </n-descriptions-item>
           <n-descriptions-item label="用户ID">
-            px
+            {{ user.userid }}
           </n-descriptions-item>
         </n-descriptions>
       </n-space>
@@ -249,20 +249,26 @@
         </n-form-item>
       </n-form>
       <n-grid
-        x-gap="10"
-        :cols="2"
+        x-gap="15"
+        :cols="1"
+        align="middle"
       >
         <n-grid-item>
           <n-button
+            id="submitEditButton"
             @click="onEditProfile"
+            size="large"
           >
             提交
           </n-button>
         </n-grid-item>
+        <n-divider></n-divider>
         <n-grid-item>
           <n-button
-            type="warning"
+            id="removeAccountButton"
+            type="error"
             @click="onRemoveAccount"
+            size="large"
           >
             注销账户
           </n-button>
@@ -281,6 +287,7 @@ import {
   NGrid, NGi, NButton, NModal, NCard, NSpace,
   NForm, NFormItem, NInput, NDescriptionsItem,
   NDivider, NAvatar, NIcon, NMenu, NDescriptions,
+  NGridItem,
   useMessage
 } from 'naive-ui'
 import {
@@ -349,7 +356,6 @@ function onUserMenuUpdate (key: string) {
 
 function onRemoveAccount () {
   inputShouldShowUserEditModal.value = false
-  console.log('id is ' + store.state.user?.userid)
   try {
     store.dispatch('removeAccount', store.state.user?.userid)
   } catch (e) {
@@ -361,39 +367,48 @@ function onRemoveAccount () {
 
 function onEditProfile () {
   const { newUsername, newPassword } = inputEditFormValue.value
-  console.log(newUsername)
-  console.log(newPassword)
   if (!newUsername && !newPassword) {
     message.error('未输入任何内容，已取消修改')
   } else {
     if (newUsername) {
-      axios.defaults.headers.common.Authorization = `Bearer ${store.state.token}`
-      try {
-        console.log('patching new user name')
-        const acc = { username: newUsername }
-        axios.patch(`/users/${user.value?.userid}`, acc).then((response) => {
-          console.log(response)
-        })
-      } catch (e) {
-        console.log(e)
+      if (!isValid(newUsername)) {
+        message.error('新用户名不合法，请重新输入')
+        return false
+      } else {
+        axios.defaults.headers.common.Authorization = `Bearer ${store.state.token}`
+        try {
+          const acc = { username: newUsername }
+          axios.patch(`/users/${user.value?.userid}`, acc).then((response) => {
+            console.log(response)
+            message.success('修改用户名成功')
+          })
+            .catch(function (error) {
+              message.error('修改用户名失败,错误信息：' + `${error.message}`)
+              return false
+            })
+        } catch (e) {
+          console.log(e)
+        }
       }
     }
-    if (newPassword) {
-      axios.defaults.headers.common.Authorization = `Bearer ${store.state.token}`
-      try {
-        console.log('patching new password')
-        const pwd = { password: newPassword }
-        axios.patch(`/users/${user.value?.userid}`, pwd).then((response) => {
-          console.log(response)
-        })
-      } catch (e) {
-        console.log(e)
-      }
-    }
-    message.success('完成修改，请重新登录')
-    inputShouldShowUserEditModal.value = false
-    onLogout()
   }
+  if (newPassword) {
+    axios.defaults.headers.common.Authorization = `Bearer ${store.state.token}`
+    try {
+      console.log('patching new password')
+      const pwd = { password: newPassword }
+      axios.patch(`/users/${user.value?.userid}`, pwd).then((response) => {
+        console.log(response)
+        message.success('修改密码成功')
+      })
+    } catch (e) {
+      console.log(e)
+      message.error('修改密码失败')
+      return false
+    }
+  }
+  inputShouldShowUserEditModal.value = false
+  onLogout()
 }
 
 const menuOptions = computed(() => {
@@ -495,7 +510,7 @@ const message = useMessage()
 
 function onLogin () {
   const { username, password } = inputLoginFormValue.value
-  if (username && password) {
+  if (username && password && isValid(username)) {
     const payload = {
       username: username,
       password: password
@@ -504,12 +519,12 @@ function onLogin () {
     store.dispatch('login', payload).then(response => {
       console.log(response)
       message.success('登录成功，欢迎回来')
+      inputShouldShowLoginModal.value = false
     })
       .catch(function (error) {
         console.log(error)
         message.error('登录失败，账号或密码错误')
       })
-    inputShouldShowLoginModal.value = false
   }
 }
 
@@ -573,20 +588,28 @@ const inputRegisterFormRules = {
   ]
 }
 
-function isValid (str) { return /^\w+$/.test(str) }
+function isValid (str: string) { return /^\w+$/.test(str) }
 
 function onRegister () {
   const { username, password, passwordRepeat } = inputRegisterFormValue.value
-  store.dispatch('register', { username, password }).then(response => {
-    console.log('response is:')
-    console.log(response)
-    message.success('注册成功，请使用该用户密码登录')
-    inputShouldShowRegisterModal.value = false
-  })
-    .catch(function (error) {
-      console.log(error)
-      message.error(`注册失败，错误信息：${error}`)
+  if (password !== passwordRepeat) {
+    message.error('两次密码输入不一致，请重新输入密码')
+    return false
+  } else if (isValid(username)) {
+    store.dispatch('register', { username, password }).then(response => {
+      console.log('response is:')
+      console.log(response)
+      message.success('注册成功，请使用该用户密码登录')
+      inputShouldShowRegisterModal.value = false
     })
+      .catch(function (error) {
+        console.log(error)
+        message.error(`注册失败，错误信息：${error}`)
+      })
+  } else {
+    message.error('用户名输入有误，请重新输入')
+    return false
+  }
 }
 
 const inputShouldShowUserMenuModal = ref(false)
@@ -623,5 +646,9 @@ onMounted(() => {
 }
 #user-file-description {
   width: 400px
+}
+
+#submitEditButton, #removeAccountButton {
+  width: 100%;
 }
 </style>

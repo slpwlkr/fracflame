@@ -12,7 +12,7 @@
       :span="8"
     >
       <artwork-card
-        :artwork="artworks ? artworks[index] : undefined"
+        :artwork="artworks ? item : undefined"
         :is-my-artwork="false"
         :is-login="isLogin"
       />
@@ -22,7 +22,7 @@
 
 <script lang="ts" setup>
 
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useStore } from 'vuex'
 import { NH1, NGrid, NGi } from 'naive-ui'
 import { key } from '@/store'
@@ -36,6 +36,10 @@ const isLogin = computed(() => {
   return store.state.isLogin
 })
 store.commit('setIsInEditor', false)
+
+onMounted(() => {
+  store.dispatch('fetchArtworks')
+})
 
 </script>
 

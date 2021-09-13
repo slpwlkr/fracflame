@@ -112,8 +112,9 @@ import {
   NDescriptions, NDescriptionsItem, NButton
 } from 'naive-ui'
 import { User } from '@vicons/fa'
-import { IArtwork } from '@/store'
+import { IArtwork, key } from '@/store'
 import { getImageURL, toCNDatetimeString } from '@/utils/Helper'
+import { useStore } from 'vuex'
 
 const props = defineProps({
   artwork: {
@@ -131,12 +132,15 @@ const props = defineProps({
 })
 
 const router = useRouter()
+const store = useStore(key)
 
 const inputShouldShowArtworkModal = ref(false)
 
 function onOpenArtwork () {
-  router.push('/flame')
-  // TODO:push的时候传入该作品参数
+  store.dispatch('fetchArtworkDataAndOpen', props.artwork.artworkID).then((response) => {
+    store.commit('setIsInEditor', true)
+    router.push('/flame')
+  })
 }
 
 function onDeleteArtwork () {
