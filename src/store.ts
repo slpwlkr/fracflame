@@ -57,7 +57,6 @@ export const store = createStore<IStoreState>({
     token: localStorage.getItem('token') || '',
     isLogin: false,
     isInEditor: false,
-    user: testUser,
     flameInEditor: testFlameInEditor,
     homeCarouselImages: testHomeCarouselImages,
     artworks: testArtworks
@@ -114,9 +113,15 @@ export const store = createStore<IStoreState>({
       state.isInEditor = isInEditor
     },
     login (state, rawData) {
-      const { token } = rawData.access_token
+      const token = rawData.access_token
+      const userid = rawData.userid
+      const userName = rawData.username
+      const currentUser : IUser = { userID: userid, username: userName }
+      state.user = currentUser
       state.token = token
+      console.log(`currentUser is ${state.user.username}`)
       localStorage.setItem('token', token)
+      console.log(`currentToken is ${state.token}`)
       axios.defaults.headers.common.Authorization = `Bearer ${token}`
       state.isLogin = true
     },
@@ -143,11 +148,29 @@ export const store = createStore<IStoreState>({
     },
     register ({ commit }, payload) {
       console.log(payload)
-      axios.post('/auth/register', payload).then((response) => {
+      return axios.post('/auth/register', payload).then((response) => {
+        console.log('reg completed')
         console.log(response)
       })
         .catch(function (error) {
-          console.log(error)
+          console.log('reg failed')
+          if (error.response) {
+            // The request was made and the server responded with a status code
+            // that falls out of the range of 2xx
+            console.log(error.response.data)
+            console.log(error.response.status)
+            console.log(error.response.headers)
+            throw new Error(`${error.response.data.error}`)
+          } else if (error.request) {
+            // The request was made but no response was received
+            // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
+            // http.ClientRequest in node.js
+            console.log(error.request)
+          } else {
+            // Something happened in setting up the request that triggered an Error
+            console.log('Error', error.message)
+          }
+          console.log(error.config)
         })
     },
     removeAccount ({ commit }, payload) {

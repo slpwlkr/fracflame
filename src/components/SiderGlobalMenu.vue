@@ -245,7 +245,7 @@ const user = computed(() => store.state.user)
 
 const userMenuOptions = [
   {
-    label: `${user.value.username}`,
+    label: user.value.username,
     key: 'user',
     children: [
       {
@@ -452,10 +452,13 @@ function isValid (str) { return /^\w+$/.test(str) }
 function onRegister () {
   const { username, password, passwordRepeat } = inputRegisterFormValue.value
   store.dispatch('register', { username, password }).then(response => {
+    console.log('response is:')
     console.log(response)
+    message.success('注册成功，请使用该用户密码登录')
   })
     .catch(function (error) {
       console.log(error)
+      message.error(`注册失败，错误信息：${error}`)
     })
 }
 
