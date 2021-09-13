@@ -137,6 +137,11 @@ export const store = createStore<IStoreState>({
     }
   },
   actions: {
+    /* editProfile()
+    * register
+    *
+    * */
+
     fetchCurrentUser ({ commit }) {
       console.log('fetching')
       return getAndCommit('/users/current', 'fetchCurrentUser', commit)
