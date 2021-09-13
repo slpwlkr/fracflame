@@ -24,10 +24,9 @@ export interface IFlameInEditor {
 }
 
 export interface IUser {
-  userID: string,
+  userid: string,
   username: string,
   avatar?: string
-  token?: string
 }
 
 export interface IArtwork {
@@ -42,7 +41,8 @@ export interface IArtwork {
   canvasHeight: number
 }
 export interface IStoreState {
-  isLogin: boolean,
+  token: string
+  isLogin: boolean
   isInEditor: boolean
   user?: IUser
   flameInEditor?: IFlameInEditor
@@ -54,9 +54,9 @@ export const key: InjectionKey<Store<IStoreState>> = Symbol('key')
 
 export const store = createStore<IStoreState>({
   state: {
+    token: localStorage.getItem('token') || '',
     isLogin: false,
     isInEditor: false,
-    user: testUser,
     flameInEditor: testFlameInEditor,
     homeCarouselImages: testHomeCarouselImages,
     artworks: testArtworks
@@ -68,7 +68,7 @@ export const store = createStore<IStoreState>({
     createNewFlameInEditor (state) {
       state.flameInEditor = {
         artworkID: '',
-        userID: state.user ? state.user.userID : '',
+        userID: state.user ? state.user.userid : '',
         title: '新建焰火',
         createdAt: Date.now(),
         lastUpdatedAt: Date.now(),
@@ -112,25 +112,91 @@ export const store = createStore<IStoreState>({
     setIsInEditor (state, isInEditor: boolean) {
       state.isInEditor = isInEditor
     },
-    login (state, user: IUser) {
-      state.user = user
+    login (state, rawData) {
+      const token = rawData.access_token
+      const userid = rawData.userid
+      const userName = rawData.username
+      const currentUser : IUser = { userid: userid, username: userName }
+      state.user = currentUser
+      state.token = token
+      console.log(`currentUser is ${state.user.username}`)
+      localStorage.setItem('token', token)
+      console.log(`currentToken is ${state.token}`)
+      axios.defaults.headers.common.Authorization = `Bearer ${token}`
+      state.isLogin = true
+    },
+    fetchCurrentUser (state, rawData) {
+      state.user = { ...rawData }
       state.isLogin = true
     },
     logout (state) {
       state.user = undefined
       state.isLogin = false
+      state.token = ''
+      localStorage.removeItem('token')
     }
   },
   actions: {
+    fetchCurrentUser ({ commit }) {
+      console.log('fetching')
+      return getAndCommit('/users/current', 'fetchCurrentUser', commit)
+    },
+    login ({ commit }, payload) {
+      return postAndCommit('/auth/login', 'login', commit, payload)
+    },
+    loginAndFetch ({ dispatch }, loginData) {
+      return dispatch('login', loginData).then(() => {
+        return dispatch('fetchCurrentUser')
+      })
+    },
+    register ({ commit }, payload) {
+      console.log(payload)
+      return axios.post('/auth/register', payload).then((response) => {
+        console.log('reg completed')
+        console.log(response)
+      })
+        .catch(function (error) {
+          console.log('reg failed')
+          if (error.response) {
+            // The request was made and the server responded with a status code
+            // that falls out of the range of 2xx
+            console.log(error.response.data)
+            console.log(error.response.status)
+            console.log(error.response.headers)
+            throw new Error(`${error.response.data.error}`)
+          } else if (error.request) {
+            // The request was made but no response was received
+            // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
+            // http.ClientRequest in node.js
+            console.log(error.request)
+          } else {
+            // Something happened in setting up the request that triggered an Error
+            console.log('Error', error.message)
+          }
+          console.log(error.config)
+        })
+    },
+    removeAccount ({ commit }, payload) {
+      console.log(payload)
+      axios.delete(`/users/${payload}`).then((response) => {
+        console.log(response)
+      })
+        .catch(function (error) {
+          console.log(error)
+        })
+    }
   }
 })
 
 const getAndCommit = async (url: string, mutationName: string, commit: Commit) => {
+  axios.defaults.headers.common.Authorization = `Bearer ${store.state.token}`
   const { data } = await axios.get(url)
   commit(mutationName, data)
 }
 
 const postAndCommit = async (url: string, mutationName: string, commit: Commit, payload: any) => {
+  axios.defaults.headers.common.Authorization = `Bearer ${store.state.token}`
   const { data } = await axios.post(url, payload)
   commit(mutationName, data)
+  return data
 }

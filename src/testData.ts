@@ -55,7 +55,7 @@ export const testFlameInEditor: IFlameInEditor = {
 }
 
 export const testUser: IUser = {
-  userID: '1',
+  userid: '1',
   username: 'slpwlkr'
 }
 

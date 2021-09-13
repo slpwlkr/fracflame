@@ -2,13 +2,12 @@
   <sider-title router-link="/" />
   <n-divider />
   <div v-if="isLogin">
-    <n-space justify="center">
+    <n-space vertical align="center">
       <n-button
         size="large"
         round
-        text
-        @click="inputShouldShowUserMenuModal = true"
-      >
+        text>
+        <!-- @click="inputShouldShowUserMenuModal = true" -->
         <n-avatar
           id="user-avatar"
           size="large"
@@ -21,6 +20,12 @@
           </n-icon>
         </n-avatar>
       </n-button>
+      <n-menu
+        :options="userMenuOptions"
+        :indent="6"
+        :root-indent="9"
+        @update:value="(key) => { onUserMenuUpdate(key) }"
+      />
     </n-space>
   </div>
   <div v-else>
@@ -155,7 +160,8 @@
       </n-form>
       <n-button
         class="modal-button"
-        @click="onRegister">
+        @click="onRegister"
+      >
         注册
       </n-button>
     </n-card>
@@ -185,34 +191,97 @@
             <user-icon />
           </n-icon>
         </n-avatar>
-        <p>
-          {{ user ? user.username : '' }}
-        </p>
       </n-space>
-      <n-button
-        class="modal-button"
+      <n-space>
+        <n-descriptions
+          id="user-file-description"
+          :column="1"
+          bordered
+          label-placement="left"
+          label-align="right"
+        >
+          <n-descriptions-item label="用户名">
+            {{ user.username }}
+          </n-descriptions-item>
+          <n-descriptions-item label="用户ID">
+            px
+          </n-descriptions-item>
+        </n-descriptions>
+      </n-space>
+    </n-card>
+  </n-modal>
+  <n-modal
+    v-model:show="inputShouldShowUserEditModal"
+  >
+    <n-card
+      id="name-editor-model-card"
+      title="修改信息"
+      size="large"
+      :closable="true"
+      @close="inputShouldShowUserEditModal = false"
+    >
+      <n-form
+        ref="inputEditFormRef"
+        :model="inputEditFormValue"
+        :rules="inputEditFormRules"
+        :show-require-mark="false">
+        <n-form-item
+          label="新用户名"
+          path="newUserName"
+        >
+          <n-input
+            v-model:value="inputEditFormValue.newUsername"
+            placeholder="请输入新用户名，不修改请留空"
+            :maxlength="64"
+            show-count
+          />
+        </n-form-item>
+        <n-form-item
+          label="新密码"
+          path="newPassword"
+        >
+          <n-input
+            v-model:value="inputEditFormValue.newPassword"
+            placeholder="请输入新密码，不修改请留空"
+            :maxlength="64"
+            show-count
+          />
+        </n-form-item>
+      </n-form>
+      <n-grid
+        x-gap="10"
+        :cols="2"
       >
-        修改信息
-      </n-button>
-      <n-button
-        class="modal-button"
-        @click="onLogout"
-      >
-        登出
-      </n-button>
+        <n-grid-item>
+          <n-button
+            @click="onEditProfile"
+          >
+            提交
+          </n-button>
+        </n-grid-item>
+        <n-grid-item>
+          <n-button
+            type="warning"
+            @click="onRemoveAccount"
+          >
+            注销账户
+          </n-button>
+        </n-grid-item>
+      </n-grid>
     </n-card>
   </n-modal>
 </template>
 
 <script lang="ts" setup>
 
-import { computed, h, ref } from 'vue'
+import { computed, h, ref, onMounted } from 'vue'
 import { useStore } from 'vuex'
 import { useRouter } from 'vue-router'
 import {
   NGrid, NGi, NButton, NModal, NCard, NSpace,
-  NForm, NFormItem, NInput,
-  NDivider, NAvatar, NIcon, NMenu
+  NForm, NFormItem, NInput, NDescriptionsItem,
+  NDivider, NAvatar, NIcon, NMenu, NDescriptions,
+  useMessage
 } from 'naive-ui'
 import {
   UserCircle as UserIcon,
@@ -231,6 +300,101 @@ const store = useStore(key)
 const router = useRouter()
 const isLogin = computed(() => store.state.isLogin)
 const user = computed(() => store.state.user)
+
+const userMenuOptions = [
+  {
+    label: () => user.value?.username,
+    key: 'user',
+    children: [
+      {
+        label: '我的资料',
+        key: 'aboutMe'
+      },
+      {
+        label: '修改信息',
+        key: 'editFile'
+      },
+      {
+        label: '登出',
+        key: 'logout'
+      }
+    ]
+  }
+]
+
+function onUserMenuUpdate (key: string) {
+  switch (key) {
+  case 'aboutMe':
+    inputShouldShowUserMenuModal.value = true
+    break
+  case 'editFile':
+    inputShouldShowUserEditModal.value = true
+    break
+  /* case 'removeAccount':
+     console.log('id is ' + store.state.user?.userid)
+     try {
+       store.dispatch('removeAccount', store.state.user?.userid)
+     } catch (e) {
+       console.log(e)
+     }
+     store.commit('logout')
+     router.push('/')
+    */
+  case 'logout':
+    store.commit('logout')
+    router.push('/')
+    break
+  }
+}
+
+function onRemoveAccount () {
+  inputShouldShowUserEditModal.value = false
+  console.log('id is ' + store.state.user?.userid)
+  try {
+    store.dispatch('removeAccount', store.state.user?.userid)
+  } catch (e) {
+    console.log(e)
+  }
+  message.success('注销成功')
+  onLogout()
+}
+
+function onEditProfile () {
+  const { newUsername, newPassword } = inputEditFormValue.value
+  console.log(newUsername)
+  console.log(newPassword)
+  if (!newUsername && !newPassword) {
+    message.error('未输入任何内容，已取消修改')
+  } else {
+    if (newUsername) {
+      axios.defaults.headers.common.Authorization = `Bearer ${store.state.token}`
+      try {
+        console.log('patching new user name')
+        const acc = { username: newUsername }
+        axios.patch(`/users/${user.value?.userid}`, acc).then((response) => {
+          console.log(response)
+        })
+      } catch (e) {
+        console.log(e)
+      }
+    }
+    if (newPassword) {
+      axios.defaults.headers.common.Authorization = `Bearer ${store.state.token}`
+      try {
+        console.log('patching new password')
+        const pwd = { password: newPassword }
+        axios.patch(`/users/${user.value?.userid}`, pwd).then((response) => {
+          console.log(response)
+        })
+      } catch (e) {
+        console.log(e)
+      }
+    }
+    message.success('完成修改，请重新登录')
+    inputShouldShowUserEditModal.value = false
+    onLogout()
+  }
+}
 
 const menuOptions = computed(() => {
   return isLogin.value ? menuOptionsIsLogin : menuOptionsNotLogin
@@ -327,18 +491,42 @@ const inputLoginFormRules = {
   }
 }
 
+const message = useMessage()
+
 function onLogin () {
   const { username, password } = inputLoginFormValue.value
   if (username && password) {
-    // TODO:验证获取
-    // axios .post .then .catch
+    const payload = {
+      username: username,
+      password: password
+    }
 
-    axios.post('http://localhost:3000/auth/login', inputLoginFormValue.value).then((response) => {
-      console.log(response.data)
-      store.commit('login', response.data)
+    store.dispatch('login', payload).then(response => {
+      console.log(response)
+      message.success('登录成功，欢迎回来')
     })
+      .catch(function (error) {
+        console.log(error)
+        message.error('登录失败，账号或密码错误')
+      })
     inputShouldShowLoginModal.value = false
   }
+}
+
+const inputShouldShowUserEditModal = ref(false)
+const inputEditFormValue = ref({
+  newUsername: '',
+  newPassword: ''
+})
+const inputEditFormRules = {
+  newUsername: [{
+    validator (rule, value) {
+      if (value && !/^\w+$/.test(value)) {
+        return new Error('用户名非法')
+      } else return true
+    },
+    trigger: ['input', 'blur']
+  }]
 }
 
 const inputShouldShowRegisterModal = ref(false)
@@ -388,21 +576,17 @@ const inputRegisterFormRules = {
 function isValid (str) { return /^\w+$/.test(str) }
 
 function onRegister () {
-  const { username, password, passwordRepeat } = inputRegisterFormRef.value
-  if (!isValid(username)) {
-    console.log('用户名非法')
-  } else if (!isValid(password)) {
-    console.log('密码非法')
-  } else if (passwordRepeat !== password) {
-    console.log('两次输入不一致')
-  } else {
-    const Req = {}
-    Req.username = this.username
-    Req.password = this.password
-    axios.post('localhost:3000', Req).then((response) => {
-      console.log(response.data)
+  const { username, password, passwordRepeat } = inputRegisterFormValue.value
+  store.dispatch('register', { username, password }).then(response => {
+    console.log('response is:')
+    console.log(response)
+    message.success('注册成功，请使用该用户密码登录')
+    inputShouldShowRegisterModal.value = false
+  })
+    .catch(function (error) {
+      console.log(error)
+      message.error(`注册失败，错误信息：${error}`)
     })
-  }
 }
 
 const inputShouldShowUserMenuModal = ref(false)
@@ -412,6 +596,13 @@ function onLogout () {
   inputShouldShowUserMenuModal.value = false
 }
 
+onMounted(() => {
+  if (localStorage.getItem('token')) {
+    console.log(`currentToken is ${store.state.token}`)
+    store.dispatch('fetchCurrentUser')
+  }
+})
+
 </script>
 
 <style scoped>
@@ -419,7 +610,7 @@ function onLogout () {
   height: 48px;
   width: 100%;
 }
-#login-modal-card, #register-modal-card, #user-menu-modal-card {
+#login-modal-card, #register-modal-card, #user-menu-modal-card, #name-editor-model-card {
   width: 480px
 }
 #user-avatar {
@@ -429,5 +620,8 @@ function onLogout () {
   height: 40px;
   width: 100%;
   margin-top: 24px
+}
+#user-file-description {
+  width: 400px
 }
 </style>
