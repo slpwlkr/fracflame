@@ -56,7 +56,7 @@ onMounted(() => {
     axios.defaults.headers.common.Authorization = `Bearer ${token.value}`
     store.dispatch('fetchCurrentUser').then(response => {
       console.log(token.value)
-      console.log(response.data)
+      console.log(response)
     })
       .catch(function (error) {
         console.log(error)

@@ -382,31 +382,33 @@ function onEditProfile () {
             console.log(response)
             message.success('修改用户名成功')
           })
+            .catch(function (error) {
+              message.error('修改用户名失败,错误信息：' + `${error.message}`)
+              return false
+            })
         } catch (e) {
           console.log(e)
-          message.error('修改用户名失败')
-          return false
         }
       }
     }
-    if (newPassword) {
-      axios.defaults.headers.common.Authorization = `Bearer ${store.state.token}`
-      try {
-        console.log('patching new password')
-        const pwd = { password: newPassword }
-        axios.patch(`/users/${user.value?.userid}`, pwd).then((response) => {
-          console.log(response)
-          message.success('修改密码成功')
-        })
-      } catch (e) {
-        console.log(e)
-        message.error('修改密码失败')
-        return false
-      }
-    }
-    inputShouldShowUserEditModal.value = false
-    onLogout()
   }
+  if (newPassword) {
+    axios.defaults.headers.common.Authorization = `Bearer ${store.state.token}`
+    try {
+      console.log('patching new password')
+      const pwd = { password: newPassword }
+      axios.patch(`/users/${user.value?.userid}`, pwd).then((response) => {
+        console.log(response)
+        message.success('修改密码成功')
+      })
+    } catch (e) {
+      console.log(e)
+      message.error('修改密码失败')
+      return false
+    }
+  }
+  inputShouldShowUserEditModal.value = false
+  onLogout()
 }
 
 const menuOptions = computed(() => {
@@ -613,7 +615,6 @@ function onRegister () {
 const inputShouldShowUserMenuModal = ref(false)
 
 function onLogout () {
-  message.success('下次再见！')
   store.commit('logout')
   inputShouldShowUserMenuModal.value = false
 }
